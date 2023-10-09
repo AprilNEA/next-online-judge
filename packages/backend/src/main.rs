@@ -1,14 +1,19 @@
 mod sandbox;
 mod handler;
+mod model;
+mod schema;
 
-
-use actix_cors::Cors;
-use actix_web::{http::header, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
+
+use actix_web::{cookie::Key, web, App, HttpServer};
+use actix_cors::Cors;
+use actix_session::{SessionMiddleware, storage::RedisActorSessionStore};
+use actix_identity::{IdentityMiddleware};
+
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 pub struct AppState {
-    db: PgPool,
+    db_pool: PgPool,
 }
 
 #[actix_web::main]
@@ -17,6 +22,8 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let database_url = String::from(std::env::var("DATABASE_URL").expect("DATABASE_URL must be set."));
+    let redis_url = String::from(std::env::var("REDIS_URL").expect("REDIS_URL must be set."));
+    let secret_key = Key::generate();
 
     // Create a connection pool
     let pool = match PgPoolOptions::new()
@@ -24,7 +31,7 @@ async fn main() -> std::io::Result<()> {
         .connect(&database_url).await
     {
         Ok(pool) => {
-            println!("✅Connection to the database is successful!");
+            println!("✅ Connection to the database is successful!");
             pool
         }
         Err(err) => {
@@ -34,17 +41,26 @@ async fn main() -> std::io::Result<()> {
     };
 
     HttpServer::new(move || {
-        let cors = Cors::default()
-            .allowed_origin("http://localhost:3000")
-            .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
-            .allowed_headers(vec![
-                header::CONTENT_TYPE,
-                header::AUTHORIZATION,
-                header::ACCEPT,
-            ])
-            .supports_credentials();
+        let cors = Cors::default().allow_any_origin();
+        // let cors = Cors::default()
+        // .allowed_origin("http://localhost:3000")
+        // .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
+        // .allowed_headers(vec![
+        //     header::CONTENT_TYPE,
+        //     header::AUTHORIZATION,
+        //     header::ACCEPT,
+        // ])
+        // .supports_credentials();
         App::new()
-            .app_data(web::Data::new(AppState { db: pool.clone() }))
+            // Install the identity framework first.
+            .wrap(IdentityMiddleware::default())
+            .wrap(
+                SessionMiddleware::new(
+                    RedisActorSessionStore::new(&redis_url),
+                    secret_key.clone(),
+                )
+            )
+            .app_data(web::Data::new(AppState { db_pool: pool.clone() }))
             .configure(handler::config)
             .wrap(cors)
     })

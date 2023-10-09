@@ -13,10 +13,10 @@ enum role {
 // 用户
 model user {
   id         Int      @id @default(autoincrement())
-  role       Role     @default(USER)
+  role       role     @default(USER)
   email      String   @unique
-  nickname   String   @unique
-  username   String   @unique
+  handle     String?  @unique
+  password   String
   created_at DateTime @default(now())
   // relation
   answers    anwser[]
@@ -26,7 +26,7 @@ model user {
 model question {
   id          Int      @id @default(autoincrement())
   title       String
-  description Text?
+  description String   @db.Text
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
 }
@@ -37,7 +37,7 @@ model testcase {
 }
 
 enum answer_status {
-  PE // Pending/Waiting
+  PW // Pending/Waiting
   CO // Compiling
   RU // Running/Judging
   AC // Accepted
@@ -61,7 +61,7 @@ enum language {
 
 model anwser {
   id         Int           @id @default(autoincrement())
-  code       Text
+  code       String        @db.Text
   status     answer_status @default(PE)
   user_id    Int
   language   language
