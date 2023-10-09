@@ -1,0 +1,71 @@
+// Prisma only use for schema management
+// @updateAt will not automaticaly update beside prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum role {
+  USER
+  ADMIN
+}
+
+// 用户
+model user {
+  id         Int      @id @default(autoincrement())
+  role       Role     @default(USER)
+  email      String   @unique
+  nickname   String   @unique
+  username   String   @unique
+  created_at DateTime @default(now())
+  // relation
+  answers    anwser[]
+}
+
+// 问题
+model question {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description Text?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+}
+
+// 测试用例
+model testcase {
+  id Int @id @default(autoincrement())
+}
+
+enum answer_status {
+  PE // Pending/Waiting
+  CO // Compiling
+  RU // Running/Judging
+  AC // Accepted
+  CE // CompileError
+  WA // WrongAnswer
+  TLE // TimeLimitExceeded
+  RE // RunningError
+  MLE // MemoryLimitExceeded
+  PE // PresentationError
+  OLE // OutputLimitExceeded
+  UE // UnknownError
+}
+
+enum language {
+  C
+  GO
+  CPP
+  RUST
+  PYTHON
+}
+
+model anwser {
+  id         Int           @id @default(autoincrement())
+  code       Text
+  status     answer_status @default(PE)
+  user_id    Int
+  language   language
+  created_at DateTime      @default(now())
+  // relation
+  user       user          @relation(fields: [user_id], references: [id])
+}
