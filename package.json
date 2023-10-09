@@ -1,0 +1,12 @@
+{
+  "name": "next-online-judge",
+  "private": "ture",
+  "author": "AprilNEA <github@sku.moe> (https://sku.moe)",
+  "description": "",
+  "scripts": {
+    "generate": "prisma generate"
+  },
+  "dependencies": {
+    "prisma": "^5.4.1"
+  }
+}
