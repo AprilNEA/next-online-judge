@@ -5,67 +5,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum role {
+enum Role {
   USER
   ADMIN
+
+  @@map("role")
 }
 
-// 用户
-model user {
-  id         Int      @id @default(autoincrement())
-  role       role     @default(USER)
-  email      String   @unique
-  handle     String?  @unique
-  password   String
-  created_at DateTime @default(now())
-  // relation
-  answers    anwser[]
-}
-
-// 问题
-model question {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String   @db.Text
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
-}
-
-// 测试用例
-model testcase {
-  id Int @id @default(autoincrement())
-}
-
-enum answer_status {
-  PW // Pending/Waiting
-  CO // Compiling
-  RU // Running/Judging
-  AC // Accepted
-  CE // CompileError
-  WA // WrongAnswer
-  TLE // TimeLimitExceeded
-  RE // RunningError
-  MLE // MemoryLimitExceeded
-  PE // PresentationError
-  OLE // OutputLimitExceeded
-  UE // UnknownError
-}
-
-enum language {
+enum Language {
   C
   GO
   CPP
   RUST
   PYTHON
+
+  @@map("language")
 }
 
-model anwser {
-  id         Int           @id @default(autoincrement())
-  code       String        @db.Text
-  status     answer_status @default(PE)
-  user_id    Int
-  language   language
-  created_at DateTime      @default(now())
+enum AnswerStatus {
+  Pending // Pending/Waiting
+  Compiling
+  Running // Running/Judging
+  Accepted
+  CompileError
+  WrongAnswer
+  TimeLimitExceeded
+  RunningError
+  MemoryLimitExceeded
+  PresentationError
+  OutputLimitExceeded
+  UnknownError
+
+  @@map("answer_status")
+}
+
+// 用户
+model User {
+  id         Int      @id @default(autoincrement())
+  role       Role     @default(USER)
+  email      String   @unique
+  handle     String?  @unique
+  password   String
+  created_at DateTime @default(now())
+
   // relation
-  user       user          @relation(fields: [user_id], references: [id])
+  solutions Solution[]
+
+  @@map("user")
+}
+
+// 问题
+model Problem {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String     @db.Text
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now()) @updatedAt
+  TestCase    TestCase[]
+
+  @@map("problem")
+}
+
+// 测试用例
+model TestCase {
+  id Int @id @default(autoincrement())
+
+  problem_id Int
+  is_hidden  Boolean @default(false)
+
+  input  String @db.Text
+  output String @db.Text
+
+  // relation
+  problem Problem @relation(fields: [problem_id], references: [id])
+
+  @@map("test_case")
+}
+
+model Solution {
+  id         Int          @id @default(autoincrement())
+  code       String       @db.Text
+  status     AnswerStatus @default(Pending)
+  user_id    Int
+  language   Language
+  created_at DateTime     @default(now())
+
+  // relation
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("solution")
 }

@@ -8,42 +8,31 @@ pub enum Role {
     Admin,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "answer_status", rename_all = "UPPERCASE")]
-enum AnswerStatus {
-    // Pending/Waiting
-    PW,
-    // Compiling
-    CO,
-    // Running/Judging
-    RU,
-    // Accepted
-    AC,
-    // CompileError
-    CE,
-    // WrongAnswer
-    WA,
-    // TimeLimitExceeded
-    TLE,
-    // RunningError
-    RE,
-    // MemoryLimitExceeded
-    MLE,
-    /* PresentationError */
-    PE,
-    // OutputLimitExceeded
-    OLE,
-    // UnknownError
-    UE,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[sqlx(type_name = "language", rename_all = "UPPERCASE")]
 enum Language {
     C,
     GO,
     CPP,
     RUST,
     PYTHON,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "answer_status")]
+enum AnswerStatus {
+    Pending,
+    Compiling,
+    Running,
+    Accepted,
+    CompileError,
+    WrongAnswer,
+    TimeLimitExceeded,
+    RunningError,
+    MemoryLimitExceeded,
+    PresentationError,
+    OutputLimitExceeded,
+    UnknownError,
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
@@ -65,8 +54,7 @@ pub struct UserAuthModel {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
-#[allow(non_snake_case)]
-struct QuestionModel {
+struct ProblemModel {
     id: i32,
     title: String,
     description: Option<String>,
@@ -75,8 +63,16 @@ struct QuestionModel {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
-#[allow(non_snake_case)]
-struct AnswerModel {
+struct TestCase {
+    id: i32,
+    problem_id: i32,
+    is_hidden: bool,
+    input: String,
+    output: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
+struct QuestionModel {
     id: i32,
     code: String,
     status: AnswerStatus,
