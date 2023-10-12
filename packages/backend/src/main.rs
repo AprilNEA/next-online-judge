@@ -1,14 +1,17 @@
 mod sandbox;
-mod handler;
 mod model;
 mod schema;
+mod guard;
+mod services;
 
 use dotenv::dotenv;
 
-use actix_web::{cookie::Key, web, App, HttpServer};
+use actix_web::{cookie::Key, web, Error, FromRequest, HttpRequest, HttpResponse, App, HttpServer};
+
 use actix_cors::Cors;
 use actix_session::{SessionMiddleware, storage::RedisActorSessionStore};
-use actix_identity::{IdentityMiddleware};
+use actix_identity::{Identity, IdentityMiddleware};
+
 
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
@@ -61,10 +64,10 @@ async fn main() -> std::io::Result<()> {
                 )
             )
             .app_data(web::Data::new(AppState { db_pool: pool.clone() }))
-            .configure(handler::config)
+            .configure(crate::services::config::config)
             .wrap(cors)
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("127.0.0.1", 8888))?
         .run()
         .await
 }

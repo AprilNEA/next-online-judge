@@ -1,13 +1,15 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "role", rename_all = "UPPERCASE")]
 pub enum Role {
-    USER,
-    ADMIN,
+    User,
+    Admin,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "answer_status", rename_all = "UPPERCASE")]
 enum AnswerStatus {
     // Pending/Waiting
     PW,
@@ -57,8 +59,7 @@ pub struct UserModel {
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 pub struct UserAuthModel {
     pub id: i32,
-    pub role: String,
-    // fixme
+    pub role: Role,
     pub email: String,
     pub password: String,
 }
