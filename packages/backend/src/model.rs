@@ -8,9 +8,9 @@ pub enum Role {
     Admin,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "language", rename_all = "UPPERCASE")]
-enum Language {
+pub enum Language {
     C,
     GO,
     CPP,
@@ -54,7 +54,7 @@ pub struct UserAuthModel {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
-struct ProblemModel {
+pub struct ProblemModel {
     id: i32,
     title: String,
     description: Option<String>,
@@ -72,7 +72,7 @@ struct TestCase {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
-struct QuestionModel {
+struct SolutionModel {
     id: i32,
     code: String,
     status: AnswerStatus,

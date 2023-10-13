@@ -1,5 +1,5 @@
 use actix_identity::{Identity};
-use actix_web::{Error, FromRequest, HttpRequest, HttpResponse};
+use actix_web::{Error, FromRequest, HttpRequest};
 use actix_web::dev::Payload;
 use actix_web::error::ErrorUnauthorized;
 use futures::future::{ready, Ready};

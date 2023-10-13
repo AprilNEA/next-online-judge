@@ -1,4 +1,4 @@
-mod sandbox;
+mod judge;
 mod model;
 mod schema;
 mod guard;
@@ -6,13 +6,13 @@ mod services;
 
 use dotenv::dotenv;
 
-use actix_web::{cookie::Key, web, Error, FromRequest, HttpRequest, HttpResponse, App, HttpServer};
+use actix_web::{cookie::Key, web, FromRequest, App, HttpServer};
 
 use actix_cors::Cors;
 use actix_session::{SessionMiddleware, storage::RedisActorSessionStore};
-use actix_identity::{Identity, IdentityMiddleware};
+use actix_identity::{IdentityMiddleware};
 
-
+// use crate::judge::sandbox::jobe::JOBE;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 pub struct AppState {
@@ -21,12 +21,14 @@ pub struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // This line loads the environment variables from the ".env" file.
     dotenv().ok();
 
     let database_url = String::from(std::env::var("DATABASE_URL").expect("DATABASE_URL must be set."));
     let redis_url = String::from(std::env::var("REDIS_URL").expect("REDIS_URL must be set."));
-    let secret_key = Key::generate();
+    let secret_key = Key::from(std::env::var("SECRET_KEY").expect("SECRET_KEY must be set.").as_bytes());
+
+    // Tools
+    // let jobe = JOBE::new(std::env::var("JOBE_URL").expect("REDIS_URL must be set."));
 
     // Create a connection pool
     let pool = match PgPoolOptions::new()
@@ -63,11 +65,13 @@ async fn main() -> std::io::Result<()> {
                     secret_key.clone(),
                 )
             )
-            .app_data(web::Data::new(AppState { db_pool: pool.clone() }))
+            .app_data(web::Data::new(AppState {
+                db_pool: pool.clone()
+            }))
             .configure(crate::services::config::config)
             .wrap(cors)
     })
-        .bind(("127.0.0.1", 8888))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }
