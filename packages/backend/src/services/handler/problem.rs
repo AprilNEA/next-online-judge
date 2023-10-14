@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use actix_web::{HttpResponse, Responder};
 use actix_web::web::{Json, Data, Path};
 use actix_identity::Identity;
@@ -26,16 +27,15 @@ pub async fn get_all(
     match problems {
         Ok(problems_list) => HttpResponse::Ok().json(problems_list),
         Err(e) => {
-            // 这里可以记录日志或进一步处理错误
             HttpResponse::InternalServerError().json(format!("Database error: {}", e))
         }
     }
 }
 
-pub async fn get(id: Path<String>, data: Data<AppState>) -> impl Responder {
+pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
     let problem = sqlx::query_as::<_, ProblemModel>(
         r#"
-        SELECT id, role, email, password FROM public.problem WHERE id = $1
+        SELECT * FROM public.problem WHERE id = $1
         "#,
     )
         .bind(id.into_inner())
@@ -43,7 +43,7 @@ pub async fn get(id: Path<String>, data: Data<AppState>) -> impl Responder {
         .await;
 
     match problem {
-        Ok(problems) => HttpResponse::Ok().json(problems),
+        Ok(problems) => HttpResponse::Ok().json(problems.id),
         Err(e) => {
             // 这里可以记录日志或进一步处理错误
             HttpResponse::InternalServerError().json(format!("Database error: {}", e))

@@ -5,7 +5,7 @@ use bcrypt::{hash, verify};
 use actix_web::{web, HttpRequest, HttpResponse, Responder, HttpMessage};
 use actix_identity::Identity;
 
-pub(crate) async fn login(
+pub async fn login(
     request: HttpRequest,
     body: web::Json<LoginSchema>,
     data: web::Data<AppState>,
@@ -58,7 +58,7 @@ pub(crate) async fn register(body: web::Json<RegisterSchema>,
     )
         .execute(&data.db_pool)
         .await;
-
+    
     match result {
         Ok(_) => HttpResponse::Ok().json("User registered successfully"),
         Err(_) => HttpResponse::BadRequest().json("Error registering user"),

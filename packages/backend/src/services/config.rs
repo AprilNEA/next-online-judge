@@ -16,7 +16,7 @@ pub fn config(cfg: &mut ServiceConfig) {
                 )
                 .service(scope("/problem")
                     .service(resource("/all").route(get().to(problem::get_all)))
-                    .service(resource("/all/{id}").route(get().to(problem::get)))
+                    .service(resource("/{id}").route(get().to(problem::get)))
                     .service(resource("/submit").route(post().to(problem::submit)))
                 )
         );
