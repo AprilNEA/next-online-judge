@@ -1,7 +1,7 @@
-use actix_identity::{Identity};
-use actix_web::{Error, FromRequest, HttpRequest};
+use actix_identity::Identity;
 use actix_web::dev::Payload;
 use actix_web::error::ErrorUnauthorized;
+use actix_web::{Error, FromRequest, HttpRequest};
 use futures::future::{ready, Ready};
 
 pub struct LoggedUser {
@@ -14,15 +14,11 @@ impl FromRequest for LoggedUser {
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         return match Identity::from_request(req, &mut Payload::None).into_inner() {
-            Ok(identity) => {
-                match identity.id() {
-                    Ok(id) => {
-                        ready(Ok(LoggedUser { id }))
-                    }
-                    Err(_) => ready(Err(ErrorUnauthorized("Unauthorized")))
-                }
-            }
-            Err(_) => ready(Err(ErrorUnauthorized("Unauthorized")))
+            Ok(identity) => match identity.id() {
+                Ok(id) => ready(Ok(LoggedUser { id })),
+                Err(_) => ready(Err(ErrorUnauthorized("Unauthorized"))),
+            },
+            Err(_) => ready(Err(ErrorUnauthorized("Unauthorized"))),
         };
     }
 }

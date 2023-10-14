@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::model::Language;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct Pager {

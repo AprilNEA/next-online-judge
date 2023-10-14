@@ -1,6 +1,6 @@
-pub mod nsjail;
 #[allow(dead_code)]
 pub mod jobe;
+pub mod nsjail;
 
 use crate::judge::JudgeError;
 

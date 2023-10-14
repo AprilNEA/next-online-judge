@@ -7,4 +7,3 @@ pub enum JudgeError {
     RunningError,
     UnexpectedError(String),
 }
-

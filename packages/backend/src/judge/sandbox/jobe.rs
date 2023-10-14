@@ -20,9 +20,7 @@ struct CodeResultPayload {
 #[allow(dead_code)]
 impl JOBE {
     pub fn new(base: String) -> JOBE {
-        JOBE {
-            base
-        }
+        JOBE { base }
     }
 
     /* 获取 JOBE 服务器可用的语言 */
@@ -47,12 +45,12 @@ impl JOBE {
         };
 
         let client = reqwest::Client::new();
-        let res = client.post(self.base.to_owned() + "/runs")
+        let res = client
+            .post(self.base.to_owned() + "/runs")
             .json(&payload)
             .send()
             .await;
-            // .json()
-            // .await?;
+        // .json()
+        // .await?;
     }
 }
-

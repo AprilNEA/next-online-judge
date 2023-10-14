@@ -1,7 +1,7 @@
+use crate::judge::{sandbox::Sandbox, JudgeError};
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
 use uuid::Uuid;
-use crate::judge::{sandbox::Sandbox, JudgeError};
 
 pub struct NsJail;
 
@@ -13,13 +13,14 @@ impl Sandbox for NsJail {
         let output_path = format!("{}/{}", CHROOT_PATH, output_filename);
 
         let mut child = Command::new("g++")
-            .arg("-x")         // Interpret next arg as source file type
-            .arg("c++")        // The source file type is C++
+            .arg("-x") // Interpret next arg as source file type
+            .arg("c++") // The source file type is C++
             .arg("-o")
             .arg(&output_path)
-            .arg("-")          // Read from stdin
+            .arg("-") // Read from stdin
             .stdin(Stdio::piped())
-            .spawn().unwrap();
+            .spawn()
+            .unwrap();
 
         {
             let stdin = child.stdin.as_mut().unwrap();
@@ -49,7 +50,8 @@ impl Sandbox for NsJail {
             .arg(&output_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn().unwrap();
+            .spawn()
+            .unwrap();
 
         {
             let stdin = child.stdin.as_mut().unwrap();
@@ -65,7 +67,9 @@ impl Sandbox for NsJail {
         }
 
         // Convert the captured output to a String
-        let result = String::from_utf8(output.stdout).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)).unwrap();
+        let result = String::from_utf8(output.stdout)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+            .unwrap();
 
         Ok(result)
     }

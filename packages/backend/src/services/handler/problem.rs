@@ -1,16 +1,11 @@
-use std::fmt::Debug;
-use actix_web::{HttpResponse, Responder};
-use actix_web::web::{Json, Data, Path};
-use actix_identity::Identity;
-use crate::{
-    judge::sandbox::nsjail::NsJail,
-    model::{ProblemModel},
-    schema::{SubmitCodeSchema},
-    AppState,
-};
 use crate::judge::sandbox::Sandbox;
 use crate::model::SubmissionForList;
-
+use crate::{
+    judge::sandbox::nsjail::NsJail, model::ProblemModel, schema::SubmitCodeSchema, AppState,
+};
+use actix_identity::Identity;
+use actix_web::web::{Data, Json, Path};
+use actix_web::{HttpResponse, Responder};
 
 pub async fn get_all(
     // query: Query<Pager>,
@@ -22,14 +17,12 @@ pub async fn get_all(
         ORDER BY id
         "#,
     )
-        .fetch_all(&data.db_pool)
-        .await;
+    .fetch_all(&data.db_pool)
+    .await;
 
     match problems {
         Ok(problems_list) => HttpResponse::Ok().json(problems_list),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Database error: {}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
     }
 }
 
@@ -39,9 +32,9 @@ pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
         SELECT * FROM public.problem WHERE id = $1
         "#,
     )
-        .bind(id.into_inner())
-        .fetch_one(&data.db_pool)
-        .await;
+    .bind(id.into_inner())
+    .fetch_one(&data.db_pool)
+    .await;
 
     match problem {
         Ok(problems) => HttpResponse::Ok().json(problems.id),
@@ -56,7 +49,9 @@ pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
 
 pub async fn submit(user: Identity, body: Json<SubmitCodeSchema>) -> impl Responder {
     let nsjail = NsJail;
-    let r = nsjail.compile(body.source_code.to_owned()).expect("TODO: panic message");
+    let r = nsjail
+        .compile(body.source_code.to_owned())
+        .expect("TODO: panic message");
     let d = nsjail.run(r, None).expect("No");
     HttpResponse::Ok().json(d)
     // let problem = sqlx::query_as::<_, ProblemModel>(
@@ -90,8 +85,8 @@ pub async fn submission_list(data: Data<AppState>) -> impl Responder {
         ORDER BY s.id DESC
         "#,
     )
-        .fetch_all(&data.db_pool)
-        .await;
+    .fetch_all(&data.db_pool)
+    .await;
 
     match submissions {
         Ok(submissions) => HttpResponse::Ok().json(submissions),

@@ -1,5 +1,5 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use chrono::{NaiveDateTime};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "role", rename_all = "UPPERCASE")]
@@ -12,10 +12,10 @@ pub enum Role {
 #[sqlx(type_name = "language", rename_all = "UPPERCASE")]
 pub enum Language {
     C,
-    GO,
-    CPP,
-    RUST,
-    PYTHON,
+    Go,
+    Cpp,
+    Rust,
+    Python,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
@@ -50,7 +50,16 @@ pub struct UserAuthModel {
     pub id: i32,
     pub role: Role,
     pub email: String,
+    pub handle: String,
     pub password: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
+pub struct UserPublicModel {
+    pub id: i32,
+    pub role: Role,
+    pub email: String,
+    pub handle: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]

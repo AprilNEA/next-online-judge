@@ -1,18 +1,17 @@
+mod guard;
 mod judge;
 mod model;
 mod schema;
-mod guard;
 mod services;
 
 use dotenv::dotenv;
 
-use actix_web::{cookie::Key, web, FromRequest, App, HttpServer};
+use actix_web::{cookie::Key, http::header, web, App, FromRequest, HttpServer};
 
 use actix_cors::Cors;
-use actix_session::{SessionMiddleware, storage::RedisActorSessionStore};
-use actix_identity::{IdentityMiddleware};
+use actix_identity::IdentityMiddleware;
+use actix_session::{storage::RedisActorSessionStore, SessionMiddleware};
 
-// use crate::judge::sandbox::jobe::JOBE;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 pub struct AppState {
@@ -23,17 +22,21 @@ pub struct AppState {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    let database_url = String::from(std::env::var("DATABASE_URL").expect("DATABASE_URL must be set."));
+    let database_url =
+        String::from(std::env::var("DATABASE_URL").expect("DATABASE_URL must be set."));
     let redis_url = String::from(std::env::var("REDIS_URL").expect("REDIS_URL must be set."));
-    let secret_key = Key::from(std::env::var("SECRET_KEY").expect("SECRET_KEY must be set.").as_bytes());
 
-    // Tools
-    // let jobe = JOBE::new(std::env::var("JOBE_URL").expect("REDIS_URL must be set."));
+    let secret_key = Key::from(
+        std::env::var("SECRET_KEY")
+            .expect("SECRET_KEY must be set.")
+            .as_bytes(),
+    );
 
     // Create a connection pool
     let pool = match PgPoolOptions::new()
         .max_connections(5)
-        .connect(&database_url).await
+        .connect(&database_url)
+        .await
     {
         Ok(pool) => {
             println!("✅ Connection to the database is successful!");
@@ -47,31 +50,26 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors = Cors::default().allow_any_origin();
-        // let cors = Cors::default()
-        // .allowed_origin("http://localhost:3000")
-        // .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
-        // .allowed_headers(vec![
-        //     header::CONTENT_TYPE,
-        //     header::AUTHORIZATION,
-        //     header::ACCEPT,
-        // ])
-        // .supports_credentials();
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_origin("https://noj.xjt.lu")
+            .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
+            .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
+            .supports_credentials();
         App::new()
             // Install the identity framework first.
             .wrap(IdentityMiddleware::default())
-            .wrap(
-                SessionMiddleware::new(
-                    RedisActorSessionStore::new(&redis_url),
-                    secret_key.clone(),
-                )
-            )
+            .wrap(SessionMiddleware::new(
+                RedisActorSessionStore::new(&redis_url),
+                secret_key.clone(),
+            ))
             .app_data(web::Data::new(AppState {
-                db_pool: pool.clone()
+                db_pool: pool.clone(),
             }))
             .configure(crate::services::config::config)
             .wrap(cors)
     })
-        .bind(("0.0.0.0", 8080))?
-        .run()
-        .await
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }
