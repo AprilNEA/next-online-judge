@@ -7,7 +7,7 @@ type IQuestion = {
   difficulty: string;
 };
 
-function QuestionBankRow(props: { data: IQuestion }) {
+function ProblemRow(props: { data: IQuestion }) {
   const { id, title, passRate, difficulty } = props.data;
 
   return (
@@ -22,7 +22,7 @@ function QuestionBankRow(props: { data: IQuestion }) {
   );
 }
 
-export function QuestionBank() {
+export function Problem() {
   return (
     <div className="overflow-x-auto">
       <table className="table table-zebra">
@@ -36,7 +36,7 @@ export function QuestionBank() {
           </tr>
         </thead>
         <tbody>
-          <QuestionBankRow
+          <ProblemRow
             data={{
               id: 1,
               title: "两数之和",

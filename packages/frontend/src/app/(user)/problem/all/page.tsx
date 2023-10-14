@@ -1,5 +1,5 @@
 import { Problem } from "@/components/problem";
 
-export default function Home() {
+export default async function ProblemAllPage() {
   return <Problem />;
 }

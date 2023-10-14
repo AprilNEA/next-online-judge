@@ -1,11 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { AuthModal } from "@/components/auth";
 
 const navs = [
   {
     name: "首页",
-    path: "/dashboard",
+    path: "/",
+  },
+  {
+    name: "题库",
+    path: "/problem/all",
+  },
+  {
+    name: "状态",
+    path: "/problem/status",
   },
 ];
 
@@ -34,32 +43,22 @@ export default function Header() {
             tabIndex={0}
             className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
           >
-            <li>
-              <a>首页</a>
-            </li>
-            <li>
-              <a>题库</a>
-            </li>
-            <li>
-              <a>我的</a>
-            </li>
+            {navs.map((nav) => (
+              <li>
+                <Link href={nav.path}>{nav.name}</Link>
+              </li>
+            ))}
           </ul>
         </div>
         <a className="btn btn-ghost normal-case text-xl">NOJ</a>
       </div>
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
-          <li>
-            <a>首页</a>
-          </li>
-          <li tabIndex={0}>
-            <details>
-              <summary>题库</summary>
-            </details>
-          </li>
-          <li>
-            <a>我的</a>
-          </li>
+          {navs.map((nav) => (
+            <li>
+              <Link href={nav.path}>{nav.name}</Link>
+            </li>
+          ))}
         </ul>
       </div>
       <div className="navbar-end">
