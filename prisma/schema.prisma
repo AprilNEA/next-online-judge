@@ -22,7 +22,7 @@ enum Language {
   @@map("language")
 }
 
-enum AnswerStatus {
+enum SubmissionStatus {
   Pending // Pending/Waiting
   Compiling
   Running // Running/Judging
@@ -36,7 +36,7 @@ enum AnswerStatus {
   OutputLimitExceeded
   UnknownError
 
-  @@map("answer_status")
+  @@map("submission_status")
 }
 
 // 用户
@@ -49,19 +49,22 @@ model User {
   created_at DateTime @default(now())
 
   // relation
-  solutions Solution[]
+  submissions Submission[]
 
   @@map("user")
 }
 
 // 问题
 model Problem {
-  id          Int        @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
-  description String     @db.Text
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @default(now()) @updatedAt
-  TestCase    TestCase[]
+  description String   @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  // relation
+  testcases   TestCase[]
+  submissions Submission[]
 
   @@map("problem")
 }
@@ -79,19 +82,21 @@ model TestCase {
   // relation
   problem Problem @relation(fields: [problem_id], references: [id])
 
-  @@map("test_case")
+  @@map("testcase")
 }
 
-model Solution {
-  id         Int          @id @default(autoincrement())
-  code       String       @db.Text
-  status     AnswerStatus @default(Pending)
+model Submission {
+  id         Int              @id @default(autoincrement())
+  code       String           @db.Text
+  status     SubmissionStatus @default(Pending)
   user_id    Int
+  problem_id Int
   language   Language
-  created_at DateTime     @default(now())
+  created_at DateTime         @default(now())
 
   // relation
-  user User @relation(fields: [user_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+  problem Problem @relation(fields: [problem_id], references: [id])
 
-  @@map("solution")
+  @@map("submission")
 }

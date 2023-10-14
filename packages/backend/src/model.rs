@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
+use chrono::{NaiveDateTime};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "role", rename_all = "UPPERCASE")]
@@ -19,8 +19,8 @@ pub enum Language {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "answer_status")]
-enum AnswerStatus {
+#[sqlx(type_name = "submission_status")]
+pub enum SubmissionStatus {
     Pending,
     Compiling,
     Running,
@@ -42,7 +42,7 @@ pub struct UserModel {
     pub email: String,
     pub handle: Option<String>,
     pub password: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
@@ -54,12 +54,13 @@ pub struct UserAuthModel {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct ProblemModel {
-    id: i32,
-    title: String,
-    description: Option<String>,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>,
+    pub id: i32,
+    pub title: String,
+    pub description: Option<String>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
@@ -72,11 +73,26 @@ struct TestCase {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
-struct SolutionModel {
+#[serde(rename_all(serialize = "camelCase"))]
+struct SubmissionModel {
     id: i32,
     code: String,
-    status: AnswerStatus,
+    status: SubmissionStatus,
     user_id: i32,
+    problem_id: i32,
     language: Language,
-    created_at: DateTime<Utc>,
+    created_at: NaiveDateTime,
+}
+
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct SubmissionForList {
+    pub id: i32,
+    pub status: SubmissionStatus,
+    pub user_id: i32,
+    pub user_handle: String,
+    pub problem_id: i32,
+    pub problem_title: String,
+    pub language: Language,
+    pub created_at: NaiveDateTime,
 }
