@@ -14,7 +14,7 @@ function ProblemRow(props: { data: IQuestion }) {
     <tr>
       <th>{id}</th>
       <td>
-        <Link href={`/question/${id}`}>{title} </Link>
+        <Link href={`/problem/${id}`}>{title} </Link>
       </td>
       <td>{passRate}</td>
       <td>{difficulty}</td>

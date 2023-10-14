@@ -1,9 +1,14 @@
+export enum Role {
+  User = "User",
+  Admin = "Admin",
+}
+
 export enum Language {
   C = "C",
-  GO = "GO",
-  CPP = "CPP",
-  RUST = "RUST",
-  PYTHON = "PYTHON",
+  Go = "Go",
+  Cpp = "Cpp",
+  Rust = "Rust",
+  Python = "Python",
 }
 
 export enum SubmissionStatus {
@@ -20,6 +25,13 @@ export enum SubmissionStatus {
   OutputLimitExceeded = "OutputLimitExceeded",
   UnknownError = "UnknownError",
 }
+
+export type IUserInfo = {
+  id: number;
+  role: Role;
+  email: string;
+  handle: string;
+};
 
 export type IProblem = {
   id: number;
