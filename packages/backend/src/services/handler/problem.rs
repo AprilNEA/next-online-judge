@@ -7,28 +7,43 @@ use crate::{
     AppState,
 };
 use actix_identity::Identity;
-use actix_web::web::{Data, Json, Path};
+use actix_web::web::{Data, Json, Path, Query};
 use actix_web::{HttpResponse, Responder};
 
 use crate::dao::{get_problem_by_id, get_user_by_id};
+use crate::entity::{Paged, PagedResult, Paginator};
 use crate::utils::parse_user_id;
 use redis::AsyncCommands;
 
-pub async fn get_all(
-    // query: Query<Pager>,
-    data: Data<AppState>,
-) -> impl Responder {
-    let problems = sqlx::query_as::<_, ProblemModel>(
-        r#"
-        SELECT * FROM public.problem
-        ORDER BY id
-        "#,
-    )
-    .fetch_all(&data.db_pool)
-    .await;
+pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
+    let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.problem"#)
+        .fetch_one(&data.db_pool)
+        .await
+        .unwrap();
 
-    match problems {
-        Ok(problems_list) => HttpResponse::Ok().json(problems_list),
+    // let problems = sqlx::query_as::<_, ProblemModel>(
+    //     r#"
+    //     SELECT * FROM public.problem
+    //     ORDER BY id
+    //     "#,
+    // )
+    // .fetch_all(&data.db_pool)
+    // .await
+    // .unwrap();
+
+    // let paged_result = PagedResult::<ProblemModel> {
+    //     data: problems,
+    //     total,
+    //     size: 0,
+    //     total_page: 0,
+    //     current_page: 0,
+    //     has_perv_page: false,
+    //     has_next_page: false,
+    // };
+
+    // HttpResponse::Ok().json(paged_result)
+    match ProblemModel::paged(&data.db_pool, &query.into_inner()).await {
+        Ok(paged_result) => HttpResponse::Ok().json(paged_result),
         Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
     }
 }

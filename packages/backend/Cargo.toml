@@ -12,6 +12,7 @@ rand = "0.8.5"
 dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.28"
+async-trait = "0.1.73"
 # safety
 bcrypt = "0.15.0"
 # web framework
@@ -31,12 +32,10 @@ serde_json = "1.0.107"
 # redis
 redis = { version = "0.23.3", features = ["tokio-comp"] }
 # sql
-sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "json", "chrono"] }
-# task queue
-apalis = { version = "0.4", features = ["redis"] }
-fang = { version = "0.10.4" , features = ["asynk"], default-features = false }
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "json", "chrono", "macros"] }
 bb8 = "0.8.1"
 bb8-redis = "0.13.1"
+
 
 [dependencies.uuid]
 version = "1.4.1"

@@ -1,6 +1,7 @@
-use crate::entity::{Language, SubmissionStatus};
+use crate::entity::{Language, Paged, SubmissionStatus};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct ProblemModel {
@@ -9,6 +10,12 @@ pub struct ProblemModel {
     pub description: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+}
+
+impl Paged for ProblemModel {
+    fn table_name() -> &'static str {
+        "public.problem"
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
