@@ -1,17 +1,6 @@
-"use client"
-import "@/globals.css";
-import { useState } from 'react';
-
-export default function ProblemList(){
-  const [filterSwitch,filterSwitcher] = useState(false);
-  return(
+export function ProblemList(list){
+  return (
     <>
-      <div className="text-4xl mb-10 flex">题目列表
-        <button className="btn btn-ghost px-[8px] ml-1">
-          { filterSwitch ? <svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="0 -960 960 960" width="30"><path d="M440-160q-17 0-28.5-11.5T400-200v-240L168-736q-15-20-4.5-42t36.5-22h560q26 0 36.5 22t-4.5 42L560-440v240q0 17-11.5 28.5T520-160h-80Z"/></svg>
-            : <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M592-481 273-800h487q25 0 36 22t-4 42L592-481ZM791-56 560-287v87q0 17-11.5 28.5T520-160h-80q-17 0-28.5-11.5T400-200v-247L56-791l56-57 736 736-57 56Z"/></svg>
-          }
-        </button></div>
       <div className="overflow-x-auto">
         <table className="table table-zebra">
           <thead>
@@ -64,7 +53,6 @@ export default function ProblemList(){
           <button className="join-item btn px-[10px]"><svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18"><path d="m280-240-56-56 184-184-184-184 56-56 240 240-240 240Zm360 0v-480h80v480h-80Z"/></svg></button>
         </div>
       </div>
-
     </>
   )
 }

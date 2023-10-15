@@ -36,6 +36,8 @@ export type IUserInfo = {
 export type IProblem = {
   id: number;
   title: string;
+  // passRate: number;
+  // difficulty: string;
   description: string;
   createdAt: string;
   updatedAt: string;
@@ -52,3 +54,12 @@ export type ISubmission = {
   problemTitle: string;
   createdAt: string;
 };
+
+
+export type IPager<T> = {
+  data: T[],
+  size: number,
+  currentPage: number,
+  hasPrevPage: boolean,
+  hasNextPage: boolean
+}

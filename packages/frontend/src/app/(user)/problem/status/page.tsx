@@ -24,7 +24,7 @@ function SubmissionTable({ data }: { data: Omit<ISubmission, "code">[] }) {
         </thead>
         <tbody>
           {data.map((submission) => (
-            <tr>
+            <tr key={submission.id}>
               <th>{submission.id}</th>
               <td>{submission.createdAt}</td>
               <td>{submission.userHandle}</td>
