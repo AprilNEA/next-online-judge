@@ -1,5 +1,5 @@
 import "@/globals.css";
-import Header from "@/app/header";
+import Header from "@/components/header";
 
 export default function UserLayout({
   children,

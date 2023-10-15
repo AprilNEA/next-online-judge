@@ -2,6 +2,7 @@ import "@/globals.css";
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { Inter } from "next/font/google";
+import { config } from "@/constant";
 
 const inter = Inter({ subsets: ["latin"] });
 const Toaster = dynamic(
@@ -12,8 +13,10 @@ const Toaster = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Next Online Judge",
+  title: config.name,
 };
+
+
 
 export default function RootLayout({
   children,
