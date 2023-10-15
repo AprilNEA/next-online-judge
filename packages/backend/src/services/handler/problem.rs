@@ -1,11 +1,18 @@
-use crate::judge::sandbox::Sandbox;
-use crate::model::SubmissionForList;
 use crate::{
-    judge::sandbox::nsjail::NsJail, model::ProblemModel, schema::SubmitCodeSchema, AppState,
+    entity::{
+        problem::{ProblemModel, SubmissionForList, SubmissionModel},
+        SubmissionStatus,
+    },
+    schema::SubmitCodeSchema,
+    AppState,
 };
 use actix_identity::Identity;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
+
+use crate::dao::{get_problem_by_id, get_user_by_id};
+use crate::utils::parse_user_id;
+use redis::AsyncCommands;
 
 pub async fn get_all(
     // query: Query<Pager>,
@@ -27,16 +34,7 @@ pub async fn get_all(
 }
 
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
-    let problem = sqlx::query_as::<_, ProblemModel>(
-        r#"
-        SELECT * FROM public.problem WHERE id = $1
-        "#,
-    )
-    .bind(id.into_inner())
-    .fetch_one(&data.db_pool)
-    .await;
-
-    match problem {
+    match get_problem_by_id(&data.db_pool, id.into_inner()).await {
         Ok(problems) => HttpResponse::Ok().json(problems.id),
         Err(e) => {
             // 这里可以记录日志或进一步处理错误
@@ -47,21 +45,48 @@ pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
 
 // pub async fn add() {}
 
-pub async fn submit(user: Identity, body: Json<SubmitCodeSchema>) -> impl Responder {
-    let nsjail = NsJail;
-    let r = nsjail
-        .compile(body.source_code.to_owned())
-        .expect("TODO: panic message");
-    let d = nsjail.run(r, None).expect("No");
-    HttpResponse::Ok().json(d)
-    // let problem = sqlx::query_as::<_, ProblemModel>(
-    //     r#"
-    //     SELECT id, role, email, password FROM public.problem WHERE id = $1
-    //     "#,
-    // )
-    //     .bind(id.into_inner())
-    //     .fetch_one(&data.db_pool)
-    //     .await;
+pub async fn submit(
+    user: Identity,
+    body: Json<SubmitCodeSchema>,
+    data: Data<AppState>,
+) -> impl Responder {
+    let user = get_user_by_id(&data.db_pool, parse_user_id(user))
+        .await
+        .unwrap();
+    let problem = get_problem_by_id(&data.db_pool, body.problem_id)
+        .await
+        .unwrap();
+
+    let submission = match sqlx::query_as::<_, SubmissionModel>(
+        r#"
+        INSERT INTO public.submission (code, status, user_id, problem_id, language)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+        "#,
+    )
+    .bind(&body.source_code)
+    .bind(SubmissionStatus::Pending)
+    .bind(&user.id)
+    .bind(&problem.id)
+    .bind(&body.language)
+    .fetch_one(&data.db_pool)
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(format!("Database error: {}", e))
+        }
+    };
+
+    {
+        let mut conn = data.redis_pool.get().await.unwrap();
+        let _: () = conn
+            .lpush("compile_task_queue", &submission.id)
+            .await
+            .unwrap();
+    }
+
+    HttpResponse::Ok().json(&submission.id)
 }
 
 pub async fn submission_list(data: Data<AppState>) -> impl Responder {

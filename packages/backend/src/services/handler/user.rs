@@ -1,22 +1,17 @@
 use crate::{
-    model::{UserAuthModel, UserPublicModel},
+    dao::get_user_by_id,
+    entity::user::UserAuthModel,
     schema::{LoginSchema, RegisterSchema},
     AppState,
 };
 
+use crate::utils::parse_user_id;
 use actix_identity::Identity;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use bcrypt::{hash, verify};
 
 pub async fn info(user: Identity, data: web::Data<AppState>) -> impl Responder {
-    let user_row = sqlx::query_as::<_, UserPublicModel>(
-        r#"
-        SELECT id, role, email, handle FROM public.user WHERE id = $1
-        "#,
-    )
-    .bind(user.id().unwrap().parse::<i32>().unwrap())
-    .fetch_one(&data.db_pool)
-    .await;
+    let user_row = get_user_by_id(&data.db_pool, parse_user_id(user)).await;
 
     match user_row {
         Ok(user) => HttpResponse::Ok().json(user),

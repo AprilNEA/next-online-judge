@@ -1,5 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/rust,node,nextjs,jetbrains
 # Edit at https://www.toptal.com/developers/gitignore?templates=rust,node,nextjs,jetbrains
+**/.env
 
 ### JetBrains ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider

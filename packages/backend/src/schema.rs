@@ -1,4 +1,4 @@
-use crate::model::Language;
+use crate::entity::Language;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
