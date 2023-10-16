@@ -59,6 +59,8 @@ export type ISubmission = {
 export type IPager<T> = {
   data: T[],
   size: number,
+  total: number,
+  totalPages: number,
   currentPage: number,
   hasPrevPage: boolean,
   hasNextPage: boolean
