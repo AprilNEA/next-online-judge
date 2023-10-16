@@ -1,12 +1,6 @@
 use crate::entity::Language;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
-pub struct Pager {
-    pub page: Option<i32>,
-    pub size: Option<i32>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct LoginSchema {
     pub email: String,

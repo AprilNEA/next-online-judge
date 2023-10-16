@@ -8,23 +8,47 @@ mod utils;
 
 use dotenv::dotenv;
 
-use actix_web::{cookie::Key, http::header, web, App, HttpServer};
+use actix_web::{
+    cookie::Key,
+    dev::{Payload, ServiceRequest},
+    http::header,
+    web, App, Error, FromRequest, HttpRequest, HttpServer,
+};
 
 use actix_cors::Cors;
-use actix_identity::IdentityMiddleware;
+use actix_identity::{Identity, IdentityMiddleware};
 use actix_session::{storage::RedisActorSessionStore, SessionMiddleware};
+use actix_web::error::ErrorUnauthorized;
+use actix_web_grants::GrantsMiddleware;
 
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::{AsyncCommands, RedisResult};
 
-use crate::dao::{get_submission_by_id, update_submission_status};
-use crate::entity::SubmissionStatus;
+use crate::dao::{get_submission_by_id, get_user_by_id, update_submission_status};
+use crate::entity::{Role, SubmissionStatus};
+use crate::utils::parse_user_id;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 pub struct AppState {
     db_pool: PgPool,
     redis_pool: Pool<RedisConnectionManager>,
+}
+async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
+    let user = match Identity::from_request(&req.request(), &mut Payload::None).into_inner() {
+        Ok(user) => user,
+        Err(_) => return Ok(vec![]),
+    };
+    let data = req.app_data::<web::Data<AppState>>().unwrap();
+    let user = get_user_by_id(&data.db_pool, parse_user_id(user))
+        .await
+        .unwrap();
+
+    if user.role == Role::Admin {
+        Ok(vec![String::from("ROLE_ADMIN")])
+    } else {
+        Err(ErrorUnauthorized("Unauthorized"))
+    }
 }
 
 async fn start_redis_consumer(db_pool: PgPool) {
@@ -97,7 +121,7 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
             .supports_credentials();
         App::new()
-            // Install the identity framework first.
+            .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(IdentityMiddleware::default())
             .wrap(SessionMiddleware::new(
                 RedisActorSessionStore::new(&redis_url),
