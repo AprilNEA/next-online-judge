@@ -55,13 +55,12 @@ export type ISubmission = {
   createdAt: string;
 };
 
-
 export type IPager<T> = {
-  data: T[],
-  size: number,
-  total: number,
-  totalPages: number,
-  currentPage: number,
-  hasPrevPage: boolean,
-  hasNextPage: boolean
-}
+  data: T[];
+  size: number;
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
+};
