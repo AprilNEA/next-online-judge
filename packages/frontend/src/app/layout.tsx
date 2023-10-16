@@ -1,9 +1,7 @@
 import "@/globals.css";
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
-import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
 const Toaster = dynamic(
   async () => ({
     default: (await import("react-hot-toast")).Toaster,
@@ -22,8 +20,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
-      <Toaster />
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

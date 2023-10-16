@@ -1,6 +1,6 @@
-import {create} from 'zustand'
+import { create } from "zustand";
 import toast from "react-hot-toast";
-import { Verification } from 'next/dist/lib/metadata/types/metadata-types';
+import { Verification } from "next/dist/lib/metadata/types/metadata-types";
 
 type AuthStore = {
   authModal: "login-phone" | "login-email" | "register";
@@ -19,51 +19,49 @@ type AuthStore = {
   requestCode: () => void;
   login: () => void;
   register: () => void;
-}
+};
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   authModal: "login-email",
   isLogin: false,
   updateEmail: (email: string) => {
-    set(email)
+    set({ email });
   },
   updateCaptcha: (captcha: number) => {
-    set(captcha);
+    set({ captcha });
   },
   updatePassword: (password: string) => {
-    set(password);
+    set({ password });
   },
   updateConfirmPassword: (confirmPassword: string) => {
-    set(confirmPassword);
+    set({ confirmPassword });
   },
   updateVerificationCode: (verificationCode: number) => {
-    set(verificationCode);
+    set({ verificationCode });
   },
-  requestCode: () => {
-
-  },
+  requestCode: () => {},
   updateLoginStatus: (isLogin: boolean) => {
-    set(isLogin);
+    set({ isLogin });
   },
   login: () => {
-    const {email, password} = get();
+    const { email, password } = get();
     if (!email) {
       toast("请输入邮箱");
     }
     if (!password) {
-      toast("请输入密码")
+      toast("请输入密码");
     }
   },
   register: () => {
-    const {email, password, confirmPassword, verificationCode} = get();
+    const { email, password, confirmPassword, verificationCode } = get();
     if (!email) {
       toast("请输入邮箱");
     }
     if (!password || !confirmPassword || password != confirmPassword) {
-      toast("两次输入的密码不一致")
+      toast("两次输入的密码不一致");
     }
     if (!verificationCode) {
-      toast("请输入验证码")
+      toast("请输入验证码");
     }
-  }
-}))
+  },
+}));

@@ -4,6 +4,7 @@ import { IProblem } from "@/types";
 
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Textarea } from "react-daisyui";
 
 export default function Client({ data }: { data: IProblem }) {
   const [userInput, setUserInput] = useState<string>();
@@ -18,25 +19,13 @@ export default function Client({ data }: { data: IProblem }) {
       <h1>Question {id}</h1>
       <h2>{title}</h2>
       <div>{description}</div>
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text">代码</span>
-          <select className="label-text-alt select-xs w-fit max-w-xs">
-            <option>C++</option>
-          </select>
-        </label>
-        <textarea
-          className="textarea textarea-bordered h-24"
+
+      <div className="flex w-full component-preview p-4 items-center justify-center gap-2 font-sans">
+        <Textarea
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Code"
-        ></textarea>
-        <label className="label">
-          <span className="label-text-alt"></span>
-          <span className="label-text-alt" onClick={onSubmit}>
-            提交
-          </span>
-        </label>
+        />
       </div>
     </div>
   );

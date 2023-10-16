@@ -1,12 +1,19 @@
-import {ProblemList} from "@/components/problem";
+"use client";
+
+import { ProblemList } from "@/app/(user)/problem/problem";
+import { Accordion } from "react-daisyui";
 
 export default function Home() {
-
-
-  return <ProblemList data={[{
-    id: 1,
-    title: "两数之和",
-    passRate: 0.5,
-    difficulty: "简单",
-  }]}/>;
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Accordion defaultChecked>
+        <Accordion.Title className="text-xl font-medium">
+          欢迎来到 Next Online Judge
+        </Accordion.Title>
+        <Accordion.Content>
+          <ProblemList />
+        </Accordion.Content>
+      </Accordion>
+    </div>
+  );
 }
