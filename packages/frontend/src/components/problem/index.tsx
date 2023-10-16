@@ -29,9 +29,11 @@ export function ProblemList() {
   const [size, setSize] = useState(20);
   const [page, setPage] = useState(1);
 
-  //@ts-ignore
-  const {data, isLoading} = useSWRImmutable<IPager<IProblem>>("/problem/all", (url) => fetcher(`${url}?` + `size=${size}` + `&page=${page}`)
-  .then(res => {res.json()}));
+  const { data, isLoading } = useSWR(
+    `/problem/all?size=${size}&page=${page}`,
+    (url) =>
+      fetcher(url).then((res) => res.json()) as Promise<IPager<IProblem>>,
+  );
 
   function updatePageOrSize({ page, size }: { page?: number; size?: number }) {
     if (page) setPage(page);
