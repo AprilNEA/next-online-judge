@@ -1,5 +1,6 @@
 use crate::services::handler::{basic, problem, user};
 use actix_web::web::{get, post, resource, scope, ServiceConfig};
+use actix_web_grants::PermissionGuard;
 
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(
@@ -17,6 +18,11 @@ pub fn config(cfg: &mut ServiceConfig) {
                     .service(resource("/submit").route(post().to(problem::submit)))
                     .service(resource("/status").route(get().to(problem::submission_list)))
                     .service(resource("/{id}").route(get().to(problem::get))),
+            )
+            .service(
+                scope("/admin")
+                    .service(resource("/health").route(get().to(basic::health)))
+                    .guard(PermissionGuard::new("ROLE_ADMIN".to_string())),
             ),
     );
 }
