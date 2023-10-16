@@ -6,6 +6,8 @@ import { Table, Pagination, Button, Progress, Select } from "react-daisyui";
 import { fetcher } from "@/utils";
 import { IPager, IProblem } from "@/types";
 import { useState, useEffect } from "react";
+import NextIcon from "@/icons/next.svg";
+import PrevIcon from "@/icons/prev.svg";
 
 function ProblemRow(props: { data: IProblem }) {
   const { id, title /*, passRate, difficulty*/ } = props.data;
@@ -25,7 +27,7 @@ function ProblemRow(props: { data: IProblem }) {
 export function ProblemList() {
   const [size, setSize] = useState(20);
   const [page, setPage] = useState(1);
-  const [buttonList, setButtonList] = useState()
+  const [buttonList, setButtonList] = useState();
   const [maxButtonsPerRow, setMaxButtonsPerRow] = useState(2);
 
   const { data, isLoading } = useSWR(
@@ -37,34 +39,73 @@ export function ProblemList() {
       }) as Promise<IPager<IProblem>>,
   );
 
-  const updateButtonsPerRow = function(){
+  const updateButtonsPerRow = function () {
     const marginLength = 207.2 + 119.2;
     const ButtonWidth = 40;
     const containerWidth = window.innerWidth;
     const availableWidth = containerWidth - marginLength;
     const totalPages = data?.totalPages ? data?.totalPages : 1;
     setMaxButtonsPerRow(Math.floor(availableWidth / ButtonWidth));
-    let buttons:any = []
-    if(totalPages <= maxButtonsPerRow){
-      for(let i = 1; i <= totalPages; i++){
-        buttons.push(<Button key={i} className="join-item w-[40px] px-auto" onClick={() => {updatePageOrSize({ page: i });}}>{i}</Button>)
-      }}else{
-        const divideNumber = Math.floor(maxButtonsPerRow / 2)
-        for(let i = 1; i <= divideNumber; i++){
-          buttons.push(<Button key={i} className="join-item w-[40px] px-auto" onClick={() => {updatePageOrSize({ page: i });}}>{i}</Button>)
-        }
-        buttons.push(<Button key='⋯' className="join-item w-[40px] px-auto">⋯</Button>)
-        for(let i = totalPages - (maxButtonsPerRow - divideNumber - 1); i <= totalPages; i++){
-          buttons.push(<Button key={i} className="join-item w-[40px] px-auto" onClick={() => {updatePageOrSize({ page: i });}}>{i}</Button>)
-        }
+    let buttons: any = [];
+    if (totalPages <= maxButtonsPerRow) {
+      for (let i = 1; i <= totalPages; i++) {
+        buttons.push(
+          <Button
+            key={i}
+            className="join-item w-[40px] px-auto"
+            onClick={() => {
+              updatePageOrSize({ page: i });
+            }}
+          >
+            {i}
+          </Button>,
+        );
       }
-      setButtonList(buttons)
+    } else {
+      const divideNumber = Math.floor(maxButtonsPerRow / 2);
+      for (let i = 1; i <= divideNumber; i++) {
+        buttons.push(
+          <Button
+            key={i}
+            className="join-item w-[40px] px-auto"
+            onClick={() => {
+              updatePageOrSize({ page: i });
+            }}
+          >
+            {i}
+          </Button>,
+        );
+      }
+      buttons.push(
+        <Button key="⋯" className="join-item w-[40px] px-auto">
+          ⋯
+        </Button>,
+      );
+      for (
+        let i = totalPages - (maxButtonsPerRow - divideNumber - 1);
+        i <= totalPages;
+        i++
+      ) {
+        buttons.push(
+          <Button
+            key={i}
+            className="join-item w-[40px] px-auto"
+            onClick={() => {
+              updatePageOrSize({ page: i });
+            }}
+          >
+            {i}
+          </Button>,
+        );
+      }
     }
+    setButtonList(buttons);
+  };
 
   useEffect(() => {
-    window.addEventListener('resize', updateButtonsPerRow);
+    window.addEventListener("resize", updateButtonsPerRow);
     return () => {
-      window.removeEventListener('resize', updateButtonsPerRow);
+      window.removeEventListener("resize", updateButtonsPerRow);
     };
   }, [data, buttonList, setButtonList]);
 
@@ -80,7 +121,6 @@ export function ProblemList() {
       </div>
     );
   }
-
 
   return (
     <>
@@ -115,28 +155,14 @@ export function ProblemList() {
             onClick={() => updatePageOrSize({ page: 1 })}
             className="join-item px-[10px]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="18"
-              viewBox="0 -960 960 960"
-              width="18"
-            >
-              <path d="M240-240v-480h80v480h-80Zm440 0L440-480l240-240 56 56-184 184 184 184-56 56Z" />
-            </svg>
+            <PrevIcon />
           </Button>
           {buttonList}
           <Button
             onClick={() => updatePageOrSize({ page: data?.totalPages })}
             className="join-item px-[10px]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="18"
-              viewBox="0 -960 960 960"
-              width="18"
-            >
-              <path d="m280-240-56-56 184-184-184-184 56-56 240 240-240 240Zm360 0v-480h80v480h-80Z" />
-            </svg>
+            <NextIcon />
           </Button>
         </Pagination>
       </div>
