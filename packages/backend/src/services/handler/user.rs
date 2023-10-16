@@ -55,13 +55,11 @@ pub async fn register(
     body: web::Json<RegisterSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    // 对密码进行hash
     let hashed_password = match hash(&body.password, 4) {
         Ok(h) => h,
         Err(_) => return HttpResponse::InternalServerError().json("Error hashing password"),
     };
 
-    // 将用户插入数据库
     let result = sqlx::query_as!(
         UserModel,
         r#"

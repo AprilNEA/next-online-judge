@@ -16,32 +16,6 @@ use crate::utils::parse_user_id;
 use redis::AsyncCommands;
 
 pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
-    let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.problem"#)
-        .fetch_one(&data.db_pool)
-        .await
-        .unwrap();
-
-    // let problems = sqlx::query_as::<_, ProblemModel>(
-    //     r#"
-    //     SELECT * FROM public.problem
-    //     ORDER BY id
-    //     "#,
-    // )
-    // .fetch_all(&data.db_pool)
-    // .await
-    // .unwrap();
-
-    // let paged_result = PagedResult::<ProblemModel> {
-    //     data: problems,
-    //     total,
-    //     size: 0,
-    //     total_page: 0,
-    //     current_page: 0,
-    //     has_perv_page: false,
-    //     has_next_page: false,
-    // };
-
-    // HttpResponse::Ok().json(paged_result)
     match ProblemModel::paged(&data.db_pool, &query.into_inner()).await {
         Ok(paged_result) => HttpResponse::Ok().json(paged_result),
         Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
@@ -51,10 +25,7 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
     match get_problem_by_id(&data.db_pool, id.into_inner()).await {
         Ok(problems) => HttpResponse::Ok().json(problems.id),
-        Err(e) => {
-            // 这里可以记录日志或进一步处理错误
-            HttpResponse::InternalServerError().json(format!("Database error: {}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
     }
 }
 
@@ -104,7 +75,15 @@ pub async fn submit(
     HttpResponse::Ok().json(&submission.id)
 }
 
-pub async fn submission_list(data: Data<AppState>) -> impl Responder {
+pub async fn submission_list(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
+    let paginator = query.into_inner();
+    let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.submission"#)
+        .fetch_one(&data.db_pool)
+        .await
+        .unwrap();
+
+    let total_pages = (total + paginator.size - 1) / paginator.size;
+
     let submissions = sqlx::query_as::<_, SubmissionForList>(
         r#"
         SELECT
@@ -126,13 +105,16 @@ pub async fn submission_list(data: Data<AppState>) -> impl Responder {
         "#,
     )
     .fetch_all(&data.db_pool)
-    .await;
+    .await
+    .unwrap();
 
-    match submissions {
-        Ok(submissions) => HttpResponse::Ok().json(submissions),
-        Err(e) => {
-            // 这里可以记录日志或进一步处理错误
-            HttpResponse::InternalServerError().json(format!("Database error: {}", e))
-        }
-    }
+    HttpResponse::Ok().json(PagedResult {
+        data: submissions,
+        total,
+        size: paginator.size,
+        total_pages,
+        current_page: paginator.page,
+        has_perv_page: paginator.page > 1,
+        has_next_page: paginator.page < total_pages,
+    })
 }
