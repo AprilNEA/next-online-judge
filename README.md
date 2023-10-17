@@ -23,15 +23,28 @@ Install [nsjail](https://nsjail.dev) for the sandbox environment.
     ```
 2. Clone and build
     ```shell
-    git clone https://github.com/google/nsjail.git
-    & cd nsjail
-    & make # make -j8
+    git clone https://github.com/google/nsjail.git \
+    && cd nsjail \
+    && make \
+    && mv ./nsjail /bin \
+    && cd .. && rm -rf ./nsjail
     ```
 
 ### Set up the database with other environments variables
 
+<details>
+
+<summary>Tips for install environment</summary>
+
+Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+
+</details>
+
 > [!IMPORTANT]
-> Environment need: Node.js >= 18, Postgres >= 15
+> Environment need: [Rust](https://www.rust-lang.org/tools/install) >= 1.7.0, Node.js >= 18, Postgres >= 15
+
+
+
 
 1. Set environment variables into `.env` under the root directory
 
