@@ -1,38 +1,19 @@
-import { create } from "zustand";
+import { create, StateCreator } from "zustand";
 import toast from "react-hot-toast";
-import { Verification } from "next/dist/lib/metadata/types/metadata-types";
 import { fetcher } from "@/utils";
+import { IAppStore, IAuthSlice, IAuthModal } from "@/types/store";
 
-export type IAuthModal = "login-phone" | "login-email" | "register";
-type AuthStore = {
-  authModal: IAuthModal;
-  email?: string;
-  captcha?: number;
-  password?: string;
-  confirmPassword?: string;
-  verificationCode?: number;
-  isLogin: boolean;
-
-  updateAuthModal: (authModal: IAuthModal) => void;
-  updateEmail: (email: string) => void;
-  updateCaptcha: (captcha: number) => void;
-  updatePassword: (password: string) => void;
-  updateConfirmPassword: (confirmPassword: string) => void;
-  updateVerificationCode: (verificationCode: number) => void;
-  updateLoginStatus: (isLogin: boolean) => void;
-  requestCode: () => void;
-  login: () => Promise<void>;
-  register: () => void;
-};
-
-export const useAuthStore = create<AuthStore>((set, get) => ({
-  authModal: "login-phone",
+export const createAuthSlice: StateCreator<IAppStore, [], [], IAuthSlice> = (
+  set,
+  get,
+) => ({
   isLogin: false,
+  authModal: "login",
   updateAuthModal: (authModal: IAuthModal) => {
     set({ authModal });
   },
-  updateEmail: (email: string) => {
-    set({ email });
+  updateAccount: (account: string) => {
+    set({ account });
   },
   updateCaptcha: (captcha: number) => {
     set({ captcha });
@@ -50,9 +31,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   updateLoginStatus: (isLogin: boolean) => {
     set({ isLogin });
   },
-  login: async () => {
-    const { email, password } = get();
-    if (!email) {
+  handleAuth: async () => {
+    const { account, password } = get();
+    if (!account) {
       toast("请输入邮箱");
     }
     if (!password) {
@@ -60,14 +41,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
     await fetcher("/user/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ account: account, password }),
     }).then((r) => {
       r.ok ? toast("登录成功") : toast("登录失败");
     });
   },
   register: () => {
-    const { email, password, confirmPassword, verificationCode } = get();
-    if (!email) {
+    const { account, password, confirmPassword, verificationCode } = get();
+    if (!account) {
       toast("请输入邮箱");
     }
     if (!password || !confirmPassword || password != confirmPassword) {
@@ -77,4 +58,4 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       toast("请输入验证码");
     }
   },
-}));
+});
