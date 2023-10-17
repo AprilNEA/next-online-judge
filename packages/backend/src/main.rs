@@ -40,7 +40,7 @@ fn redis_url() -> String {
     std::env::var("REDIS_URL").expect("[Config] REDIS_URL must be set.")
 }
 
-async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
+async fn extract(req: &ServiceRequest) -> Result<Vec<Role>, Error> {
     let user = match Identity::from_request(&req.request(), &mut Payload::None).into_inner() {
         Ok(user) => user,
         Err(_) => return Ok(vec![]),
@@ -49,12 +49,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
         .unwrap();
-
-    if user.role == Role::Admin {
-        Ok(vec![String::from("ROLE_ADMIN")])
-    } else {
-        Err(ErrorUnauthorized("Unauthorized"))
-    }
+    Ok(vec![user.role])
 }
 
 async fn start_redis_consumer(db_pool: PgPool) {
