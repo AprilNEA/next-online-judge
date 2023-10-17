@@ -92,20 +92,18 @@ pub async fn add_testcase(
     user: Identity,
     body: Json<Vec<TestCaseCreateSchema>>,
     data: Data<AppState>,
-) -> Result<HttpResponse, AppError> 
-{
+) -> Result<HttpResponse, AppError> {
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
         .unwrap();
-    
-    let problem = get_problem_by_id(&data.db_pool, body.0[0].problem_id)
-        .await
-        .unwrap();
 
-    let mut TestcaseVec: Vec<TestcaseModel> = Vec::new();
-    
-    for testcaseTemp in &body.0
-    {
+    get_problem_by_id(&data.db_pool, body.0[0].problem_id)
+        .await
+        .map_err(|_e| AppError::ProblemNotFound)?;
+
+    let mut testcase_vec: Vec<TestcaseModel> = Vec::new();
+
+    for testcaseTemp in &body.0 {
         let testcase = sqlx::query_as::<_, TestcaseModel>(
             r#"
                 INSERT INTO public.testcase (problem_id, is_hidden, input, output, created_user_id)
@@ -121,10 +119,10 @@ pub async fn add_testcase(
         .fetch_one(&data.db_pool)
         .await
         .map_err(|_e| AppError::DatabaseError)?;
-        TestcaseVec.push(testcase);
+        testcase_vec.push(testcase);
     }
 
-    Ok(HttpResponse::Ok().json(TestcaseVec))
+    Ok(HttpResponse::Ok().json(testcase_vec))
 }
 
 pub async fn submit(
