@@ -3,17 +3,114 @@
 import { Button, Modal, Input, Textarea } from "react-daisyui";
 import { ProblemList } from "@/app/admin/problem/problem";
 import { useState } from "react";
+import { fetcher } from "@/utils";
+import { ITestcase } from "@/types";
 
-export default function AdminProblemPage() {
-  const { Dialog, handleShow } = Modal.useDialog();
+function AddProblemModal() {
   const [title, setTitle] = useState<string>();
   const [description, setDescription] = useState<string>();
-  const [inData, setInData] = useState<string>();
-  const [outData, setOutData] = useState<string>();
+  const [testcases, setTestcases] = useState<Omit<ITestcase, "problem_id">[]>();
+  const [inputData, setInputData] = useState<string>("");
+  const [outputData, setOutputData] = useState<string>("");
+
+  function addIOData() {
+    if (!inputData || !outputData) return;
+    setTestcases((prevState) => [
+      ...(prevState ?? []),
+      { input: inputData, output: outputData },
+    ]);
+    setInputData("");
+    setOutputData("");
+  }
+
+  async function handleSubmit() {
+    await fetcher("/problem/add", {
+      method: "POST",
+      body: JSON.stringify({
+        title,
+        description,
+        testcases: [
+          {
+            input: inputData,
+            output: outputData,
+          },
+        ],
+      }),
+    });
+  }
 
   return (
     <>
-      <div className=" flex overflow-hidden pl-0 mt-5 justify-between">
+      <Modal.Header className="font-bold mb-5 flex justify-between">
+        <div className="flex items-center">添加题目</div>
+        <div className="flex">
+          <form method="dialog">
+            <Button className="mr-1 btn-ghost">取消</Button>
+          </form>
+          <Button onClick={handleSubmit}>提交</Button>
+        </div>
+      </Modal.Header>
+      <Modal.Body>
+        <div className="flex w-full component-preview p-1 items-center font-sans px-0">
+          <div className="flex mr-2 items-center whitespace-nowrap">标题</div>
+          <div className="form-control w-full">
+            <Input
+              type="text"
+              value={title}
+              placeholder="Title"
+              onChange={(e) => {
+                setTitle(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+          <div className="flex mr-2 items-center whitespace-nowrap">描述</div>
+          <div className="form-control w-full">
+            <Textarea
+              value={description}
+              placeholder="Description"
+              onChange={(e) => {
+                setDescription(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+          <div className="flex mr-2 items-center whitespace-nowrap">输入</div>
+          <div className="form-control w-full">
+            <Textarea
+              value={inputData}
+              placeholder="In Data"
+              onChange={(e) => {
+                setInputData(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+          <div className="flex mr-2 items-center whitespace-nowrap">输出</div>
+          <div className="form-control w-full">
+            <Textarea
+              value={outputData}
+              placeholder="Out Data"
+              onChange={(e) => {
+                setOutputData(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+      </Modal.Body>
+    </>
+  );
+}
+
+export default function AdminProblemPage() {
+  const { Dialog, handleShow } = Modal.useDialog();
+
+  return (
+    <>
+      <div className="flex overflow-hidden pl-0 mt-5 justify-between">
         <div className="text-3xl whitespace-nowrap">题目管理</div>
         <Button onClick={handleShow} color="primary">
           添加题目
@@ -22,74 +119,7 @@ export default function AdminProblemPage() {
       <ProblemList />
       <div className="font-sans">
         <Dialog>
-          <Modal.Header className="font-bold mb-5 flex justify-between">
-            <div className="flex items-center">添加题目</div>
-            <div className="flex">
-              <form method="dialog">
-                <Button className="mr-1 btn-ghost">取消</Button>
-              </form>
-              <Button>提交</Button>
-            </div>
-          </Modal.Header>
-          <Modal.Body>
-            <div className="flex w-full component-preview p-1 items-center font-sans px-0">
-              <div className="flex mr-2 items-center whitespace-nowrap">
-                标题
-              </div>
-              <div className="form-control w-full">
-                <Input
-                  type="text"
-                  value={title}
-                  placeholder="Title"
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
-              <div className="flex mr-2 items-center whitespace-nowrap">
-                描述
-              </div>
-              <div className="form-control w-full">
-                <Textarea
-                  value={description}
-                  placeholder="Description"
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
-              <div className="flex mr-2 items-center whitespace-nowrap">
-                输入
-              </div>
-              <div className="form-control w-full">
-                <Textarea
-                  value={inData}
-                  placeholder="In Data"
-                  onChange={(e) => {
-                    setInData(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
-              <div className="flex mr-2 items-center whitespace-nowrap">
-                输出
-              </div>
-              <div className="form-control w-full">
-                <Textarea
-                  value={outData}
-                  placeholder="Out Data"
-                  onChange={(e) => {
-                    setOutData(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-          </Modal.Body>
+          <AddProblemModal />
         </Dialog>
       </div>
     </>
