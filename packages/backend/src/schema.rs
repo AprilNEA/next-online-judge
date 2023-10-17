@@ -40,7 +40,7 @@ pub struct TestCaseCreateSchema {
 pub struct ProblemCreateSchema {
     pub title: String,
     pub description: String,
-    pub testcases: Vec<TestCaseCreateSchema>,
+    pub testcases: Option<Vec<TestCaseCreateSchema>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
