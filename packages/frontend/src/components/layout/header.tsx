@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import Auth from "@/components/auth";
+import AuthModal from "@/components/auth";
 import { Button, Dropdown, Menu, Navbar } from "react-daisyui";
+import useInfo from "@/hooks/use-info";
 
 const navs = [
   {
@@ -20,6 +21,8 @@ const navs = [
 ];
 
 export default function Header() {
+  const { userInfo, userInfoLoading } = useInfo();
+
   return (
     <div className="flex justify-center">
       <Navbar>
@@ -66,7 +69,8 @@ export default function Header() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          <Auth />
+          {!userInfoLoading &&
+            (userInfo ? <span>{userInfo.handle}</span> : <AuthModal />)}
         </Navbar.End>
       </Navbar>
     </div>

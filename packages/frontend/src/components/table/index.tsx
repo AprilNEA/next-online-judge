@@ -69,19 +69,22 @@ export function TableWithPager<T>(props: {
       <div className="overflow-x-auto">
         <Table>
           <Table.Head>
-            {props.headers.map((item) => (
-              <span key={item.key} className={item.className}>
-                {item.name}
+            {props.headers.map((header) => (
+              <span key={header.key} className={header.className}>
+                {header.name}
               </span>
             ))}
           </Table.Head>
           <Table.Body>
-            {data.data.map((item) => (
+            {data.data.map((row) => (
               // @ts-ignore
-              <Table.Row key={item.key}>
+              <Table.Row key={row.key}>
                 {props.headers.map((header) => (
                   // @ts-ignore
-                  <span key={header.key}>{item[header.key]}</span>
+                  <span key={`${row.key}-${header.key}`}>
+                    {/*@ts-ignore*/}
+                    {row[header.key]}
+                  </span>
                 ))}
               </Table.Row>
             ))}
