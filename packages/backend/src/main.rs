@@ -1,5 +1,6 @@
 mod dao;
 mod entity;
+mod error;
 mod guard;
 mod judge;
 mod schema;
@@ -12,13 +13,13 @@ use actix_web::{
     cookie::Key,
     dev::{Payload, ServiceRequest},
     http::header,
-    web, App, Error, FromRequest, HttpRequest, HttpServer,
+    web, App, Error, FromRequest, HttpServer,
 };
 
 use actix_cors::Cors;
 use actix_identity::{Identity, IdentityMiddleware};
-use actix_session::{storage::RedisActorSessionStore, SessionMiddleware};
-use actix_web::error::ErrorUnauthorized;
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::{error::ErrorUnauthorized, ResponseError};
 use actix_web_grants::GrantsMiddleware;
 
 use bb8::Pool;
@@ -34,6 +35,11 @@ pub struct AppState {
     db_pool: PgPool,
     redis_pool: Pool<RedisConnectionManager>,
 }
+
+fn redis_url() -> String {
+    std::env::var("REDIS_URL").expect("[Config] REDIS_URL must be set.")
+}
+
 async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
     let user = match Identity::from_request(&req.request(), &mut Payload::None).into_inner() {
         Ok(user) => user,
@@ -52,8 +58,8 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<String>, Error> {
 }
 
 async fn start_redis_consumer(db_pool: PgPool) {
-    println!("Consumer is right");
-    let client = redis::Client::open("redis://localhost:6388/").unwrap();
+    println!("[Worker] Consumer is right");
+    let client = redis::Client::open(redis_url()).unwrap();
     let mut conn = client.get_async_connection().await.unwrap();
 
     loop {
@@ -81,42 +87,42 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let database_url =
-        String::from(std::env::var("DATABASE_URL").expect("DATABASE_URL must be set."));
-    let redis_url = String::from(std::env::var("REDIS_URL").expect("REDIS_URL must be set."));
-
-    let redis_pool = Pool::builder()
-        .build(RedisConnectionManager::new("redis://localhost:6388/").unwrap())
-        .await
-        .expect("Failed to build connection pool");
+        String::from(std::env::var("DATABASE_URL").expect("[Config] DATABASE_URL must be set."));
 
     let secret_key = Key::from(
         std::env::var("SECRET_KEY")
-            .expect("SECRET_KEY must be set.")
+            .expect("[Config] SECRET_KEY must be set.")
             .as_bytes(),
     );
 
+    let redis_store = RedisSessionStore::new(redis_url())
+        .await
+        .expect("[Redis] Failed to build connection.");
+    let redis_pool = Pool::builder()
+        .build(RedisConnectionManager::new(redis_url()).unwrap())
+        .await
+        .expect("[Redis] Failed to build connection pool.");
+
     // Create a connection pool
     let db_pool = match PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(10)
         .connect(&database_url)
         .await
     {
         Ok(pool) => {
-            println!("✅ Connection to the database is successful!");
+            println!("[Database] Connection to the database is successful!");
             pool
         }
         Err(err) => {
-            println!("🔥 Failed to connect to the database: {:?}", err);
+            println!("[Database] Failed to connect to the database: {:?}", err);
             std::process::exit(1);
         }
     };
 
-    tokio::spawn(start_redis_consumer(db_pool.clone()));
-
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin("http://localhost:3000")
-            .allowed_origin("https://noj.xjt.lu")
+            .allowed_origin("https://judge.xjt.lu")
             .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
             .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
             .supports_credentials();
@@ -124,7 +130,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(IdentityMiddleware::default())
             .wrap(SessionMiddleware::new(
-                RedisActorSessionStore::new(&redis_url),
+                redis_store.clone(),
                 secret_key.clone(),
             ))
             .app_data(web::Data::new(AppState {

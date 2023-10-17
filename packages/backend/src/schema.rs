@@ -27,3 +27,24 @@ pub struct SubmitCodeSchema {
     pub language: Language,
     pub source_code: String,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TestCaseCreateSchema {
+    pub problem_id: Option<i32>,
+    pub is_hidden: bool,
+    pub input: String,
+    pub output: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProblemCreateSchema {
+    pub title: String,
+    pub description: String,
+    pub testcases: Vec<TestCaseCreateSchema>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct ProblemCreateResponseSchema {
+    pub new_problem_id: i32,
+}

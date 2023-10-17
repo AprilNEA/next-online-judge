@@ -47,7 +47,7 @@ pub async fn login(
                 HttpResponse::InternalServerError().json("Error verifying password")
             }
         }
-        Err(_) => HttpResponse::BadRequest().json("Invalid email or password"),
+        Err(e) => HttpResponse::BadRequest().json(format!("Invalid email or password,{}", e)),
     }
 }
 

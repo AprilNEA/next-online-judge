@@ -19,7 +19,7 @@ impl Paged for ProblemModel {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
-struct TestCase {
+pub struct TestcaseModel {
     id: i32,
     problem_id: i32,
     is_hidden: bool,

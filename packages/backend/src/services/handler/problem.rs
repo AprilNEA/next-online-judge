@@ -1,47 +1,23 @@
 use crate::{
     entity::{
-        problem::{ProblemModel, SubmissionForList, SubmissionModel},
+        problem::{ProblemModel, SubmissionForList, SubmissionModel, TestcaseModel},
         SubmissionStatus,
     },
-    schema::SubmitCodeSchema,
+    schema::ProblemCreateSchema,
     AppState,
 };
 use actix_identity::Identity;
 use actix_web::web::{Data, Json, Path, Query};
-use actix_web::{HttpResponse, Responder};
+use actix_web::{App, HttpResponse, Responder, ResponseError};
 
 use crate::dao::{get_problem_by_id, get_user_by_id};
 use crate::entity::{Paged, PagedResult, Paginator};
+use crate::error::AppError;
+use crate::schema::{ProblemCreateResponseSchema, SubmitCodeSchema, TestCaseCreateSchema};
 use crate::utils::parse_user_id;
 use redis::AsyncCommands;
 
 pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
-    let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.problem"#)
-        .fetch_one(&data.db_pool)
-        .await
-        .unwrap();
-
-    // let problems = sqlx::query_as::<_, ProblemModel>(
-    //     r#"
-    //     SELECT * FROM public.problem
-    //     ORDER BY id
-    //     "#,
-    // )
-    // .fetch_all(&data.db_pool)
-    // .await
-    // .unwrap();
-
-    // let paged_result = PagedResult::<ProblemModel> {
-    //     data: problems,
-    //     total,
-    //     size: 0,
-    //     total_page: 0,
-    //     current_page: 0,
-    //     has_perv_page: false,
-    //     has_next_page: false,
-    // };
-
-    // HttpResponse::Ok().json(paged_result)
     match ProblemModel::paged(&data.db_pool, &query.into_inner()).await {
         Ok(paged_result) => HttpResponse::Ok().json(paged_result),
         Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
@@ -51,14 +27,93 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
     match get_problem_by_id(&data.db_pool, id.into_inner()).await {
         Ok(problems) => HttpResponse::Ok().json(problems.id),
-        Err(e) => {
-            // 这里可以记录日志或进一步处理错误
-            HttpResponse::InternalServerError().json(format!("Database error: {}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
     }
 }
 
-// pub async fn add() {}
+pub async fn add(
+    user: Identity,
+    body: Json<ProblemCreateSchema>,
+    data: Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    let user = get_user_by_id(&data.db_pool, parse_user_id(user))
+        .await
+        .unwrap();
+
+    // TODO transcation manully
+    // let tx = data.db_pool.clone();
+    //
+    // sqlx::query("BEGIN")
+    //     .execute(tx)
+    //     .await
+    //     .expect("BEGIN failed");
+
+    let new_problem_id = sqlx::query!(
+        r#"
+        INSERT INTO public.problem (title, description, created_user_id)
+        VALUES ($1, $2, $3)
+        RETURNING id
+        "#,
+        &body.title,
+        &body.description,
+        &user.id
+    )
+    .fetch_one(&data.db_pool)
+    .await
+    .map_err(|_e| AppError::DatabaseError)?;
+
+    for testcase in &body.testcases {
+        sqlx::query::<_>(
+            r#"
+            INSERT INTO testcase (problem_id, is_hidden, input, output, created_user_id)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+        )
+        .bind(&new_problem_id.id)
+        .bind(&testcase.is_hidden)
+        .bind(&testcase.input)
+        .bind(&testcase.output)
+        .bind(&user.id)
+        .execute(&data.db_pool)
+        .await
+        .map_err(|_e| AppError::DatabaseError)?;
+    }
+
+    // tx.commit().await.map_err(|_e| AppError::DatabaseError)?;
+
+    Ok(HttpResponse::Ok().json(ProblemCreateResponseSchema {
+        new_problem_id: new_problem_id.id,
+    }))
+}
+
+pub async fn add_testcase(
+    user: Identity,
+    body: Json<TestCaseCreateSchema>,
+    data: Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    let user = get_user_by_id(&data.db_pool, parse_user_id(user))
+        .await
+        .unwrap();
+    // let Some(problem_id)
+    // let problem = get_problem_by_id(&data.db_pool, &body.problem_id);
+    let testcase = sqlx::query_as::<_, TestcaseModel>(
+        r#"
+            INSERT INTO public.testcase (problem_id, is_hidden, input, output, created_user_id)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, problem_id, is_hidden, input, output
+            "#,
+    )
+    .bind(&body.problem_id)
+    .bind(&body.is_hidden)
+    .bind(&body.input)
+    .bind(&body.output)
+    .bind(&user.id)
+    .fetch_one(&data.db_pool)
+    .await
+    .map_err(|_e| AppError::DatabaseError)?;
+
+    Ok(HttpResponse::Ok().json(testcase))
+}
 
 pub async fn submit(
     user: Identity,
@@ -73,7 +128,7 @@ pub async fn submit(
         .unwrap();
 
     let submission = match sqlx::query_as::<_, SubmissionModel>(
-        r#"
+        r#"#
         INSERT INTO public.submission (code, status, user_id, problem_id, language)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *
@@ -104,7 +159,18 @@ pub async fn submit(
     HttpResponse::Ok().json(&submission.id)
 }
 
-pub async fn submission_list(data: Data<AppState>) -> impl Responder {
+pub async fn submission_list(
+    query: Query<Paginator>,
+    data: Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    let paginator = query.into_inner();
+    let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.submission"#)
+        .fetch_one(&data.db_pool)
+        .await
+        .map_err(|_e| AppError::DatabaseError)?;
+
+    let total_pages = (total + paginator.size - 1) / paginator.size;
+
     let submissions = sqlx::query_as::<_, SubmissionForList>(
         r#"
         SELECT
@@ -126,13 +192,16 @@ pub async fn submission_list(data: Data<AppState>) -> impl Responder {
         "#,
     )
     .fetch_all(&data.db_pool)
-    .await;
+    .await
+    .map_err(|_e| AppError::DatabaseError)?;
 
-    match submissions {
-        Ok(submissions) => HttpResponse::Ok().json(submissions),
-        Err(e) => {
-            // 这里可以记录日志或进一步处理错误
-            HttpResponse::InternalServerError().json(format!("Database error: {}", e))
-        }
-    }
+    Ok(HttpResponse::Ok().json(PagedResult {
+        data: submissions,
+        total,
+        size: paginator.size,
+        total_pages,
+        current_page: paginator.page,
+        has_perv_page: paginator.page > 1,
+        has_next_page: paginator.page < total_pages,
+    }))
 }
