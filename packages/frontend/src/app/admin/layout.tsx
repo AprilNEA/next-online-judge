@@ -1,4 +1,4 @@
-import Header from "@/components/layout/header";
+import { HeaderAdmin } from "@/components/layout/header";
 
 export default function UserLayout({
   children,
@@ -7,8 +7,8 @@ export default function UserLayout({
 }) {
   return (
     <>
-      <Header />
-      <div className="mx-20 my-10">{children}</div>
+      <HeaderAdmin />
+      <div className="max-w-[1200px] mx-auto px-[24px]">{children}</div>
     </>
   );
 }

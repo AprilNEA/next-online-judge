@@ -7,6 +7,7 @@ import { IAuthModal, useAuthStore } from "@/store";
 import CodeIcon from "@/icons/code.svg";
 import EmailIcon from "@/icons/email.svg";
 import KeyIcon from "@/icons/key.svg";
+import PhoneIcon from "@/icons/phone.svg"
 
 function LoginModal() {
   const authStore = useAuthStore.getState();
@@ -15,13 +16,13 @@ function LoginModal() {
     <>
       <div className="flex w-full component-preview p-4 items-center justify-center gap-2 font-sans px-0">
         <div className="flex mr-2 items-center">
-          <EmailIcon />
+          <PhoneIcon />
         </div>
         <div className="form-control w-full max-w-xs">
           <Input
             type="text"
             value={authStore.email}
-            placeholder="Li.Hua23@student.xjtlu.edu.cn"
+            placeholder="Phone number"
             onChange={(e) => {
               authStore.updateEmail(e.target.value);
             }}
@@ -126,8 +127,7 @@ export default function AuthModal() {
         <Modal.Body>
           <LoginModal />
         </Modal.Body>
-        <Modal.Actions className="justify-between">
-          <div className="flex">
+        <Modal.Actions className="flex justify-between">
             <Button
               className="btn-ghost"
               onClick={() =>
@@ -140,8 +140,9 @@ export default function AuthModal() {
             >
               {renderText.left[authStore.authModal]}
             </Button>
+            <div className="flex">
             <form method="dialog">
-              <Button className="btn-ghost">取消</Button>
+              <Button className="btn-ghost mr-1">取消</Button>
             </form>
             <Button
               className="bg-black text-white hover:bg-gray-500"
