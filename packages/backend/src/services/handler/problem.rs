@@ -88,31 +88,41 @@ pub async fn add(
 
 pub async fn add_testcase(
     user: Identity,
-    body: Json<TestCaseCreateSchema>,
+    body: Json<Vec<TestCaseCreateSchema>>,
     data: Data<AppState>,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, AppError> 
+{
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
         .unwrap();
-    // let Some(problem_id)
-    // let problem = get_problem_by_id(&data.db_pool, &body.problem_id);
-    let testcase = sqlx::query_as::<_, TestcaseModel>(
-        r#"
-            INSERT INTO public.testcase (problem_id, is_hidden, input, output, created_user_id)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, problem_id, is_hidden, input, output
-            "#,
-    )
-    .bind(&body.problem_id)
-    .bind(&body.is_hidden)
-    .bind(&body.input)
-    .bind(&body.output)
-    .bind(&user.id)
-    .fetch_one(&data.db_pool)
-    .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    
+    let problem = get_problem_by_id(&data.db_pool, body.0[0].problem_id)
+        .await
+        .unwrap();
 
-    Ok(HttpResponse::Ok().json(testcase))
+    let mut TestcaseVec: Vec<TestcaseModel> = Vec::new();
+    
+    for testcaseTemp in &body.0
+    {
+        let testcase = sqlx::query_as::<_, TestcaseModel>(
+            r#"
+                INSERT INTO public.testcase (problem_id, is_hidden, input, output, created_user_id)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, problem_id, is_hidden, input, output
+                "#,
+        )
+        .bind(&testcaseTemp.problem_id)
+        .bind(&testcaseTemp.is_hidden)
+        .bind(&testcaseTemp.input)
+        .bind(&testcaseTemp.output)
+        .bind(&user.id)
+        .fetch_one(&data.db_pool)
+        .await
+        .map_err(|_e| AppError::DatabaseError)?;
+        TestcaseVec.push(testcase);
+    }
+
+    Ok(HttpResponse::Ok().json(TestcaseVec))
 }
 
 pub async fn submit(

@@ -30,10 +30,10 @@ pub struct SubmitCodeSchema {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TestCaseCreateSchema {
-    pub problem_id: Option<i32>,
+    pub problem_id: i32,
     pub is_hidden: bool,
     pub input: String,
-    pub output: String,
+    pub output:String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
