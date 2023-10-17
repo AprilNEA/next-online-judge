@@ -62,21 +62,23 @@ pub async fn add(
     .await
     .map_err(|_e| AppError::DatabaseError)?;
 
-    for testcase in &body.testcases {
-        sqlx::query::<_>(
-            r#"
+    if let Some(testcases) = &body.testcases {
+        for testcase in testcases {
+            sqlx::query::<_>(
+                r#"
             INSERT INTO testcase (problem_id, is_hidden, input, output, created_user_id)
             VALUES ($1, $2, $3, $4, $5)
             "#,
-        )
-        .bind(&new_problem_id.id)
-        .bind(&testcase.is_hidden)
-        .bind(&testcase.input)
-        .bind(&testcase.output)
-        .bind(&user.id)
-        .execute(&data.db_pool)
-        .await
-        .map_err(|_e| AppError::DatabaseError)?;
+            )
+            .bind(&new_problem_id.id)
+            .bind(&testcase.is_hidden)
+            .bind(&testcase.input)
+            .bind(&testcase.output)
+            .bind(&user.id)
+            .execute(&data.db_pool)
+            .await
+            .map_err(|_e| AppError::DatabaseError)?;
+        }
     }
 
     // tx.commit().await.map_err(|_e| AppError::DatabaseError)?;
