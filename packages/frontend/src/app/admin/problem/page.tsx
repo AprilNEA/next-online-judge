@@ -8,6 +8,7 @@ import { ITestcase } from "@/types";
 
 function AddProblemModal() {
   const [title, setTitle] = useState<string>();
+  const [isUsingLegacy, setIsUsingLegacy] = useState<boolean>(false);
   const [description, setDescription] = useState<string>();
   const [testcases, setTestcases] = useState<Omit<ITestcase, "problem_id">[]>();
   const [inputData, setInputData] = useState<string>("");
@@ -38,7 +39,6 @@ function AddProblemModal() {
       }),
     });
   }
-
   return (
     <>
       <Modal.Header className="font-bold mb-5 flex justify-between">
@@ -50,54 +50,59 @@ function AddProblemModal() {
           <Button onClick={handleSubmit}>提交</Button>
         </div>
       </Modal.Header>
-      <Modal.Body>
-        <div className="flex w-full component-preview p-1 items-center font-sans px-0">
-          <div className="flex mr-2 items-center whitespace-nowrap">标题</div>
-          <div className="form-control w-full">
-            <Input
-              type="text"
-              value={title}
-              placeholder="Title"
-              onChange={(e) => {
-                setTitle(e.target.value);
-              }}
-            />
+      <Modal.Body className="flex w-full h-full justify-between">
+        <div className="w-1/3">
+          <div className="flex w-full component-preview p-1 items-center font-sans px-0">
+            <div className="flex mr-2 items-center whitespace-nowrap">标题</div>
+            <div className="form-control w-full">
+              <Input
+                type="text"
+                value={title}
+                placeholder="Title"
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+            <div className="flex mr-2 items-center whitespace-nowrap">描述</div>
+            <div className="w-full h-full">
+              <Textarea
+                className="w-full h-full"
+                value={description}
+                placeholder="Description"
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                }}
+              />
+            </div>
           </div>
         </div>
-        <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
-          <div className="flex mr-2 items-center whitespace-nowrap">描述</div>
-          <div className="form-control w-full">
-            <Textarea
-              value={description}
-              placeholder="Description"
-              onChange={(e) => {
-                setDescription(e.target.value);
-              }}
-            />
+        <div className="w-2/3 pl-5">
+          <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+            <div className="flex mr-2 items-center whitespace-nowrap">输入</div>
+            <div className="form-control w-full">
+              <Textarea
+                value={inputData}
+                placeholder="In Data"
+                onChange={(e) => {
+                  setInputData(e.target.value);
+                }}
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
-          <div className="flex mr-2 items-center whitespace-nowrap">输入</div>
-          <div className="form-control w-full">
-            <Textarea
-              value={inputData}
-              placeholder="In Data"
-              onChange={(e) => {
-                setInputData(e.target.value);
-              }}
-            />
-          </div>
-        </div>
-        <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
-          <div className="flex mr-2 items-center whitespace-nowrap">输出</div>
-          <div className="form-control w-full">
-            <Textarea
-              value={outputData}
-              placeholder="Out Data"
-              onChange={(e) => {
-                setOutputData(e.target.value);
-              }}
-            />
+          <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+            <div className="flex mr-2 items-center whitespace-nowrap">输出</div>
+            <div className="form-control w-full">
+              <Textarea
+                value={outputData}
+                placeholder="Out Data"
+                onChange={(e) => {
+                  setOutputData(e.target.value);
+                }}
+              />
+            </div>
           </div>
         </div>
       </Modal.Body>
@@ -118,7 +123,7 @@ export default function AdminProblemPage() {
       </div>
       <ProblemList />
       <div className="font-sans">
-        <Dialog>
+        <Dialog className="h-full w-full max-w-none max-h-none rounded-none">
           <AddProblemModal />
         </Dialog>
       </div>
