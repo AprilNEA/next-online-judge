@@ -7,9 +7,10 @@ use crate::entity::Role;
 pub struct UserModel {
     pub id: i32,
     pub role: Role,
-    pub email: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
     pub handle: Option<String>,
-    pub password: String,
+    pub password: Option<String>,
     pub created_at: NaiveDateTime,
 }
 

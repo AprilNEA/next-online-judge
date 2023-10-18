@@ -11,8 +11,20 @@ pub struct LoginSchema {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RegisterSchema {
-    pub email: String,
+    pub account: String,
+    pub code: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ActiveSchema {
+    pub handle: String,
     pub password: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ForgetSchema {
+    pub account: String,
+    pub code: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

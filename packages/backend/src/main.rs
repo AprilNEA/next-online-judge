@@ -21,6 +21,7 @@ use actix_web::{
 use actix_cors::Cors;
 use actix_identity::{Identity, IdentityMiddleware};
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::cookie::SameSite;
 
 use actix_web_grants::GrantsMiddleware;
 
@@ -115,19 +116,20 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors = Cors::default()
+            .allowed_methods(vec!["OPTIONS", "PUT", "POST", "GET", "PATCH", "DELETE"])
+            .allow_any_header()
             .allowed_origin("http://localhost:3000")
             .allowed_origin("http://127.0.0.1:3000")
             .allowed_origin("https://judge.xjt.lu")
-            .allow_any_method()
-            .allow_any_header()
+            .max_age(3600)
             .supports_credentials();
         App::new()
             .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(IdentityMiddleware::default())
-            .wrap(SessionMiddleware::new(
+            .wrap(SessionMiddleware::builder(
                 redis_store.clone(),
                 secret_key.clone(),
-            ))
+            ).build())
             .app_data(web::Data::new(AppState {
                 db_pool: db_pool.clone(),
                 redis_pool: redis_pool.clone(),
@@ -135,7 +137,7 @@ async fn main() -> std::io::Result<()> {
             .configure(crate::services::config::config)
             .wrap(cors)
     })
-    .bind(("0.0.0.0", 8080))?
-    .run()
-    .await
+        .bind(("0.0.0.0", 8081))?
+        .run()
+        .await
 }

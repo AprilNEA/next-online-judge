@@ -4,29 +4,41 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::BTreeMap;
 
 use actix_identity::Identity;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, App, HttpMessage, HttpRequest, HttpResponse, Responder};
+use log::Level::Info;
 use redis::AsyncCommands;
 use reqwest;
 
 use crate::error::AppError;
+use crate::schema::ActiveSchema;
 use crate::{
     dao::get_user_by_id,
-    entity::user::UserAuthModel,
+    entity::user::{UserAuthModel, UserModel},
     schema::{
-        user::SMSResponse, CodeRequestSchema, LoginSchema, RegisterSchema, SMSTempVerifyTTL2,
-        ValidateCodeSchema,
+        user::{InfoResponse, SMSResponse},
+        CodeRequestSchema, LoginSchema, RegisterSchema, SMSTempVerifyTTL2, ValidateCodeSchema,
     },
     utils::parse_user_id,
     AppState,
 };
 
-pub async fn info(user: Identity, data: web::Data<AppState>) -> impl Responder {
-    let user_row = get_user_by_id(&data.db_pool, parse_user_id(user)).await;
+pub async fn info(identity: Identity, data: web::Data<AppState>) -> Result<HttpResponse, AppError> {
+    let user = sqlx::query_as::<_, UserModel>(
+        r#"
+        SELECT id, role, email, phone, handle, password, created_at FROM public.user WHERE id = $1
+        "#,
+    )
+    .bind(&identity.id())
+    .fetch_one(&data.db_pool)
+    .await
+    .map_err(|_e| AppError::DatabaseError)?;
 
-    match user_row {
-        Ok(user) => HttpResponse::Ok().json(user),
-        Err(e) => HttpResponse::BadRequest().body(e.to_string()),
-    }
+    Ok(HttpResponse::Ok().json(InfoResponse {
+        id: user.id,
+        role: user.role,
+        handle: user.handle,
+        status,
+    }))
 }
 
 pub async fn login(
@@ -123,25 +135,42 @@ pub async fn request_code(
     }
 }
 
+pub async fn active(
+    identity: Identity,
+    body: web::Json<ActiveSchema>,
+    data: web::Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    let hashed_password = match hash(&body.password, 4) {
+        Ok(h) => h,
+        Err(_) => return Ok(HttpResponse::InternalServerError().json("Error hashing password")),
+    };
+
+    let result = sqlx::query!(
+        UserModel,
+        r#"
+        UPDATE public.user (phone)
+        SET handle = $1, password = $2
+        WHERE id = $3
+        "#,
+        &body.handle,
+        &body.password,
+        identity.id()
+    )
+    .execute(&data.db_pool)
+    .await;
+}
+
 pub async fn register(
     body: web::Json<RegisterSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    // 对密码进行hash
-    let hashed_password = match hash(&body.password, 4) {
-        Ok(h) => h,
-        Err(_) => return HttpResponse::InternalServerError().json("Error hashing password"),
-    };
-
-    // 将用户插入数据库
     let result = sqlx::query_as!(
         UserModel,
         r#"
-        INSERT INTO public.user (email, password)
-        VALUES ($1, $2)
+        INSERT INTO public.user (phone)
+        VALUES ($1)
         "#,
-        body.email,
-        hashed_password
+        body.email
     )
     .execute(&data.db_pool)
     .await;
@@ -151,3 +180,5 @@ pub async fn register(
         Err(_) => HttpResponse::BadRequest().json("Error registering user"),
     }
 }
+
+pub async fn forget(body: web::Json<RegisterSchema>, data: web::Data<AppState>) {}
