@@ -6,8 +6,10 @@ mod judge;
 mod schema;
 mod services;
 mod utils;
+mod worker;
 
 use dotenv::dotenv;
+use std::fmt::format;
 
 use actix_web::{
     cookie::Key,
@@ -19,17 +21,18 @@ use actix_web::{
 use actix_cors::Cors;
 use actix_identity::{Identity, IdentityMiddleware};
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
-use actix_web::{error::ErrorUnauthorized, ResponseError};
+
 use actix_web_grants::GrantsMiddleware;
 
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
-use redis::{AsyncCommands, RedisResult};
 
-use crate::dao::{get_submission_by_id, get_user_by_id, update_submission_status};
-use crate::entity::{Role, SubmissionStatus};
+use crate::dao::get_user_by_id;
+use crate::entity::Role;
 use crate::utils::parse_user_id;
+use crate::worker::{compile_worker, run_worker};
 use sqlx::postgres::{PgPool, PgPoolOptions};
+use tokio::spawn;
 
 pub struct AppState {
     db_pool: PgPool,
@@ -52,31 +55,6 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<Role>, Error> {
     Ok(vec![user.role])
 }
 
-async fn start_redis_consumer(db_pool: PgPool) {
-    println!("[Worker] Consumer is right");
-    let client = redis::Client::open(redis_url()).unwrap();
-    let mut conn = client.get_async_connection().await.unwrap();
-
-    loop {
-        let task_data: Option<(String, String)> =
-            conn.brpop("compile_task_queue", 0).await.unwrap();
-        match task_data {
-            Some((_list, data)) => {
-                // Handle the task using the data
-                println!("Processing task: {}", data);
-                let submission_id = data.parse::<i32>().unwrap();
-                // let submission = get_submission_by_id(&db_pool);
-                // {}
-
-                update_submission_status(&db_pool, submission_id, SubmissionStatus::Compiling)
-                    .await
-                    .expect("TODO: panic message");
-            }
-            None => {}
-        }
-    }
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -90,13 +68,31 @@ async fn main() -> std::io::Result<()> {
             .as_bytes(),
     );
 
-    let redis_store = RedisSessionStore::new(redis_url())
+    let redis_store = match RedisSessionStore::new(redis_url()).await {
+        Ok(store) => {
+            println!("[Session Store] Succeed to connect redis.");
+            store
+        }
+        Err(err) => {
+            println!("[Session Store] Failed to connect to the redis: {:?}", err);
+            std::process::exit(1);
+        }
+    };
+    let redis_pool = match Pool::builder()
+        .build(
+            RedisConnectionManager::new(redis_url()).expect("[Redis] Failed to build connection."),
+        )
         .await
-        .expect("[Redis] Failed to build connection.");
-    let redis_pool = Pool::builder()
-        .build(RedisConnectionManager::new(redis_url()).unwrap())
-        .await
-        .expect("[Redis] Failed to build connection pool.");
+    {
+        Ok(pool) => {
+            println!("[Redis] Succeed to build redis pool.");
+            pool
+        }
+        Err(err) => {
+            println!("[Redis] Failed to connect to the redis: {:?}", err);
+            std::process::exit(1);
+        }
+    };
 
     // Create a connection pool
     let db_pool = match PgPoolOptions::new()
@@ -113,6 +109,9 @@ async fn main() -> std::io::Result<()> {
             std::process::exit(1);
         }
     };
+
+    spawn(compile_worker(db_pool.clone(), redis_pool.clone()));
+    spawn(run_worker(db_pool.clone(), redis_pool.clone()));
 
     HttpServer::new(move || {
         let cors = Cors::default()
