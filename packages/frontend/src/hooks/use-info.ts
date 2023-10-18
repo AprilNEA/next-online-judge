@@ -15,6 +15,7 @@ export default function useInfo() {
     {
       shouldRetryOnError: false,
       keepPreviousData: true,
+      revalidateOnFocus: false,
     },
   );
 

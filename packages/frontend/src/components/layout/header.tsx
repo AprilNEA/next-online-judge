@@ -4,6 +4,8 @@ import Link from "next/link";
 import Auth from "@/components/auth";
 import { Button, Dropdown, Menu, Navbar } from "react-daisyui";
 import useInfo from "@/hooks/use-info";
+import { useAppStore } from "@/store";
+import { useEffect } from "react";
 
 const navs = [
   {
@@ -37,6 +39,15 @@ const adminNavs = [
 
 export function Header() {
   const { userInfo, userInfoLoading } = useInfo();
+  //const { updateIsForceInit } = useAppStore();
+
+/*
+  useEffect(() => {
+    if(userInfoLoading) return;
+    //@ts-ignore
+    if(userInfo.status = "inactive") updateIsForceInit(true);
+    return () => updateIsForceInit(false);
+  },[updateIsForceInit, userInfo, userInfoLoading])*/
 
   return (
     <div className="flex justify-center">

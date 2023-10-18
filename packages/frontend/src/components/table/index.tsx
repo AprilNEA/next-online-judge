@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-
+import Link from "next/link";
 import { Table, Pagination, Button, Select } from "react-daisyui";
 
 import { fetcher } from "@/utils";
@@ -28,10 +28,10 @@ export function TableWithPager<T>(props: {
   const searchParams = useSearchParams();
 
   const [size, setSize] = useState(
-    parseInt(searchParams.get("size") ?? "20", 10),
+    parseInt(searchParams.get("size") ?? "20", 10)
   );
   const [page, setPage] = useState(
-    parseInt(searchParams.get("page") ?? "1", 10),
+    parseInt(searchParams.get("page") ?? "1", 10)
   );
 
   const { data, isLoading } = useSWR(
@@ -39,7 +39,7 @@ export function TableWithPager<T>(props: {
     (url: string) =>
       fetcher(url).then((res) => {
         return res.json();
-      }) as Promise<IPager<T>>,
+      }) as Promise<IPager<T>>
   );
 
   function updatePage({
@@ -78,15 +78,15 @@ export function TableWithPager<T>(props: {
           <Table.Body>
             {data.data.map((row) => (
               // @ts-ignore
-              <Table.Row key={row.key}>
-                {props.headers.map((header) => (
-                  // @ts-ignore
-                  <span key={`${row.key}-${header.key}`}>
-                    {/*@ts-ignore*/}
-                    {row[header.key]}
-                  </span>
-                ))}
-              </Table.Row>
+                <Table.Row key={row.key}>
+                  {props.headers.map((header) => (
+                    // @ts-ignore
+                    <span key={`${row.key}-${header.key}`}>
+                      {/*@ts-ignore*/}
+                      {row[header.key]}
+                    </span>
+                  ))}
+                </Table.Row>
             ))}
           </Table.Body>
         </Table>
