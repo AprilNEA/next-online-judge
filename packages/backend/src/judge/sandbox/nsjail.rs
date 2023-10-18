@@ -1,7 +1,7 @@
 use crate::judge::{sandbox::Sandbox, JudgeError};
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
-use uuid::Uuid;
+// use uuid::Uuid;
 
 pub struct NsJail;
 

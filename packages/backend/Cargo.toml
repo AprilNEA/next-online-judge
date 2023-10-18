@@ -9,6 +9,7 @@ edition = "2021"
 [dependencies]
 log = "0.4.20"
 rand = "0.8.5"
+regex = "1.9.6"
 dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.28"

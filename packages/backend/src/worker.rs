@@ -6,7 +6,6 @@ use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::AsyncCommands;
 use sqlx::PgPool;
-use std::fmt::format;
 
 pub async fn compile_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionManager>) {
     println!("[Worker][Compile] Worker is right");

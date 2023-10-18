@@ -1,20 +1,20 @@
 use crate::{
+    dao::{get_problem_by_id, get_user_by_id},
     entity::{
         problem::{ProblemModel, SubmissionForList, SubmissionModel, TestcaseModel},
         SubmissionStatus,
     },
-    schema::ProblemCreateSchema,
+    entity::{Paged, PagedResult, Paginator},
+    error::AppError,
+    schema::problem::{
+        ProblemCreateResponseSchema, ProblemCreateSchema, SubmitCodeSchema, TestCaseCreateSchema,
+    },
+    utils::parse_user_id,
     AppState,
 };
 use actix_identity::Identity;
 use actix_web::web::{Data, Json, Path, Query};
-use actix_web::{HttpResponse, Responder, ResponseError};
-
-use crate::dao::{get_problem_by_id, get_user_by_id};
-use crate::entity::{Paged, PagedResult, Paginator};
-use crate::error::AppError;
-use crate::schema::{ProblemCreateResponseSchema, SubmitCodeSchema, TestCaseCreateSchema};
-use crate::utils::parse_user_id;
+use actix_web::{HttpResponse, Responder};
 use redis::AsyncCommands;
 
 pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
@@ -27,7 +27,7 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
     match get_problem_by_id(&data.db_pool, id.into_inner()).await {
         Ok(problem) => Ok(HttpResponse::Ok().json(problem)),
-        Err(e) => Err(AppError::DatabaseError),
+        Err(_) => Err(AppError::DatabaseError),
     }
 }
 

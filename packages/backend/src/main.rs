@@ -7,31 +7,19 @@ mod schema;
 mod services;
 mod utils;
 mod worker;
-
 use dotenv::dotenv;
-use std::fmt::format;
-
 use actix_web::{
     cookie::Key,
     dev::{Payload, ServiceRequest},
-    http::header,
     web, App, Error, FromRequest, HttpServer,
 };
-
 use actix_cors::Cors;
 use actix_identity::{Identity, IdentityMiddleware};
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
-use actix_web::cookie::SameSite;
-
 use actix_web_grants::GrantsMiddleware;
-
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
-
-use crate::dao::get_user_by_id;
-use crate::entity::Role;
-use crate::utils::parse_user_id;
-use crate::worker::{compile_worker, run_worker};
+use crate::{dao::get_user_by_id,entity::Role ,utils::parse_user_id,worker::{compile_worker, run_worker},};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tokio::spawn;
 
