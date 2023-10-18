@@ -31,21 +31,6 @@ export const createAuthSlice: StateCreator<IAppStore, [], [], IAuthSlice> = (
   updateLoginStatus: (isLogin: boolean) => {
     set({ isLogin });
   },
-  handleAuth: async () => {
-    const { account, password } = get();
-    if (!account) {
-      toast("请输入邮箱");
-    }
-    if (!password) {
-      toast("请输入密码");
-    }
-    await fetcher("/user/login", {
-      method: "POST",
-      body: JSON.stringify({ account: account, password }),
-    }).then((r) => {
-      r.ok ? toast("登录成功") : toast("登录失败");
-    });
-  },
   register: () => {
     const { account, password, confirmPassword, verificationCode } = get();
     if (!account) {
