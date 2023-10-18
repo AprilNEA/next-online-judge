@@ -7,6 +7,14 @@ const nextConfig = {
     });
     return config;
   },
+  rewrites: () => {
+    return [
+      {
+        source: "/api/:slug*",
+        destination: process.env.BACKEND_BASE ?? "http://localhost:8080",
+      },
+    ];
+  },
   transpilePackages: ["react-daisyui"],
   reactStrictMode: true,
 };
