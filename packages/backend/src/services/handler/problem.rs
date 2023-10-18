@@ -24,9 +24,9 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
     }
 }
 
-pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
+pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
     match get_problem_by_id(&data.db_pool, id.into_inner()).await {
-        Ok(problem) => HttpResponse::Ok().json(problem),
+        Ok(problem) => Ok(HttpResponse::Ok().json(problem)),
         Err(e) => AppError::DatabaseError,
     }
 }
