@@ -26,8 +26,8 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
 
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> impl Responder {
     match get_problem_by_id(&data.db_pool, id.into_inner()).await {
-        Ok(problems) => HttpResponse::Ok().json(problems.id),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
+        Ok(problem) => HttpResponse::Ok().json(problem),
+        Err(e) => AppError::DatabaseError,
     }
 }
 
@@ -129,7 +129,7 @@ pub async fn submit(
     user: Identity,
     body: Json<SubmitCodeSchema>,
     data: Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, AppError> {
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
         .unwrap();
@@ -137,8 +137,8 @@ pub async fn submit(
         .await
         .unwrap();
 
-    let submission = match sqlx::query_as::<_, SubmissionModel>(
-        r#"#
+    let submission = sqlx::query_as::<_, SubmissionModel>(
+        r#"
         INSERT INTO public.submission (code, status, user_id, problem_id, language)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *
@@ -151,22 +151,15 @@ pub async fn submit(
     .bind(&body.language)
     .fetch_one(&data.db_pool)
     .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(format!("Database error: {}", e))
-        }
-    };
+    .map_err(|_e| AppError::DatabaseError)?;
 
-    {
-        let mut conn = data.redis_pool.get().await.unwrap();
-        let _: () = conn
-            .lpush("compile_task_queue", &submission.id)
-            .await
-            .unwrap();
-    }
+    let mut conn = data.redis_pool.get().await.expect("Unable to get");
+    let _: () = conn
+        .lpush("compile_task_queue", &submission.id)
+        .await
+        .expect("Redis Error");
 
-    HttpResponse::Ok().json(&submission.id)
+    Ok(HttpResponse::Ok().json(&submission.id))
 }
 
 pub async fn submission_list(
