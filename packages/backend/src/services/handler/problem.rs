@@ -27,7 +27,7 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
     match get_problem_by_id(&data.db_pool, id.into_inner()).await {
         Ok(problem) => Ok(HttpResponse::Ok().json(problem)),
-        Err(e) => AppError::DatabaseError,
+        Err(e) => Err(AppError::DatabaseError),
     }
 }
 
@@ -101,28 +101,28 @@ pub async fn add_testcase(
         .await
         .map_err(|_e| AppError::ProblemNotFound)?;
 
-    let mut testcase_vec: Vec<TestcaseModel> = Vec::new();
+    let mut new_testcases: Vec<TestcaseModel> = Vec::new();
 
-    for testcaseTemp in &body.0 {
-        let testcase = sqlx::query_as::<_, TestcaseModel>(
+    for testcase in &body.0 {
+        let new_testcase = sqlx::query_as::<_, TestcaseModel>(
             r#"
                 INSERT INTO public.testcase (problem_id, is_hidden, input, output, created_user_id)
                 VALUES ($1, $2, $3, $4, $5)
                 RETURNING id, problem_id, is_hidden, input, output
                 "#,
         )
-        .bind(&testcaseTemp.problem_id)
-        .bind(&testcaseTemp.is_hidden)
-        .bind(&testcaseTemp.input)
-        .bind(&testcaseTemp.output)
+        .bind(&testcase.problem_id)
+        .bind(&testcase.is_hidden)
+        .bind(&testcase.input)
+        .bind(&testcase.output)
         .bind(&user.id)
         .fetch_one(&data.db_pool)
         .await
         .map_err(|_e| AppError::DatabaseError)?;
-        testcase_vec.push(testcase);
+        new_testcases.push(new_testcase);
     }
 
-    Ok(HttpResponse::Ok().json(testcase_vec))
+    Ok(HttpResponse::Ok().json(new_testcases))
 }
 
 pub async fn submit(
