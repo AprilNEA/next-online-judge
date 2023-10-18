@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import AuthModal from "@/components/auth";
+import Auth from "@/components/auth";
 import { Button, Dropdown, Menu, Navbar } from "react-daisyui";
 import useInfo from "@/hooks/use-info";
 
@@ -85,7 +85,7 @@ export function Header() {
         </Navbar.Center>
         <Navbar.End>
           {!userInfoLoading &&
-            (userInfo ? <span>{userInfo.handle}</span> : <AuthModal />)}
+            (userInfo ? <span>{userInfo.handle}</span> : <Auth />)}
         </Navbar.End>
       </Navbar>
     </div>
@@ -145,7 +145,7 @@ export function HeaderAdmin() {
         </Navbar.Center>
         <Navbar.End>
           {!userInfoLoading &&
-            (userInfo ? <span>{userInfo.handle}</span> : <AuthModal />)}
+            (userInfo ? <span>{userInfo.handle}</span> : <Auth />)}
         </Navbar.End>
       </Navbar>
     </div>
