@@ -1,3 +1,4 @@
+const BASE = process.env.BACKEND_BASE ?? "http://localhost:8080";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack(config) {
@@ -11,7 +12,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:slug*",
-        destination: process.env.BACKEND_BASE ?? "http://localhost:8080",
+        destination: `${BASE}/api/:slug*`,
       },
     ];
   },
