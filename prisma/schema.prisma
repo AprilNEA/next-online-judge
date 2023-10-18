@@ -46,7 +46,7 @@ model User {
   phone       String?      @unique
   email       String?      @unique
   handle      String?      @unique
-  password    String
+  password    String?
   created_at  DateTime     @default(now())
   register_ip String?      @db.Inet
   // relation

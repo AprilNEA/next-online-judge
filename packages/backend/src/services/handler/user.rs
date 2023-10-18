@@ -10,6 +10,7 @@ use redis::AsyncCommands;
 use reqwest;
 
 use crate::error::AppError;
+use crate::schema::user::UserStatus;
 use crate::schema::ActiveSchema;
 use crate::{
     dao::get_user_by_id,
@@ -28,17 +29,24 @@ pub async fn info(identity: Identity, data: web::Data<AppState>) -> Result<HttpR
         SELECT id, role, email, phone, handle, password, created_at FROM public.user WHERE id = $1
         "#,
     )
-    .bind(&identity.id())
+    .bind(parse_user_id(identity))
     .fetch_one(&data.db_pool)
     .await
     .map_err(|_e| AppError::DatabaseError)?;
 
-    Ok(HttpResponse::Ok().json(InfoResponse {
-        id: user.id,
-        role: user.role,
-        handle: user.handle,
-        status,
-    }))
+    let mut response = InfoResponse {
+        id: user.id.clone(),
+        role: user.role.clone(),
+        handle: user.handle.clone(),
+        status: UserStatus::Normal,
+    };
+
+    if let (Some(_handle), Some(_password)) = (&user.handle, &user.password) {
+    } else {
+        response.status = UserStatus::InActive;
+    }
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn login(
@@ -145,38 +153,45 @@ pub async fn active(
         Err(_) => return Ok(HttpResponse::InternalServerError().json("Error hashing password")),
     };
 
-    let result = sqlx::query!(
-        UserModel,
+    match sqlx::query!(
         r#"
-        UPDATE public.user (phone)
+        UPDATE public.user
         SET handle = $1, password = $2
         WHERE id = $3
         "#,
         &body.handle,
         &body.password,
-        identity.id()
+        parse_user_id(identity)
     )
     .execute(&data.db_pool)
-    .await;
+    .await
+    {
+        Ok(_) => Ok(HttpResponse::Ok().body("")),
+        Err(_) => Err(AppError::DatabaseError),
+    }
 }
 
 pub async fn register(
+    request: HttpRequest,
     body: web::Json<RegisterSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let result = sqlx::query_as!(
-        UserModel,
+    let new_user = sqlx::query_as::<_, UserModel>(
         r#"
         INSERT INTO public.user (phone)
         VALUES ($1)
         "#,
-        body.email
     )
-    .execute(&data.db_pool)
+    .bind(&body.account)
+    .fetch_one(&data.db_pool)
     .await;
 
-    match result {
-        Ok(_) => HttpResponse::Ok().json("User registered successfully"),
+    match new_user {
+        Ok(user) => {
+            Identity::login(&request.extensions(), user.id.to_string())
+                .expect("Unable to attach session");
+            HttpResponse::Ok().json("User registered successfully")
+        }
         Err(_) => HttpResponse::BadRequest().json("Error registering user"),
     }
 }

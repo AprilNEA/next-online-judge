@@ -8,7 +8,7 @@ use crate::{
 };
 use actix_identity::Identity;
 use actix_web::web::{Data, Json, Path, Query};
-use actix_web::{App, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpResponse, Responder, ResponseError};
 
 use crate::dao::{get_problem_by_id, get_user_by_id};
 use crate::entity::{Paged, PagedResult, Paginator};

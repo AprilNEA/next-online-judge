@@ -126,10 +126,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(IdentityMiddleware::default())
-            .wrap(SessionMiddleware::builder(
-                redis_store.clone(),
-                secret_key.clone(),
-            ).build())
+            .wrap(SessionMiddleware::builder(redis_store.clone(), secret_key.clone()).build())
             .app_data(web::Data::new(AppState {
                 db_pool: db_pool.clone(),
                 redis_pool: redis_pool.clone(),
@@ -137,7 +134,7 @@ async fn main() -> std::io::Result<()> {
             .configure(crate::services::config::config)
             .wrap(cors)
     })
-        .bind(("0.0.0.0", 8081))?
-        .run()
-        .await
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }
