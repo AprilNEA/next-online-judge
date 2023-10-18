@@ -43,6 +43,13 @@ export type IProblem = {
   updatedAt: string;
 };
 
+export type ITestcase = {
+  problem_id: number;
+  is_hidden?: boolean;
+  input: string;
+  output: string;
+};
+
 export type ISubmission = {
   id: number;
   code: string;

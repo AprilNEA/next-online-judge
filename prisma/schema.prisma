@@ -41,13 +41,14 @@ enum SubmissionStatus {
 
 // 用户
 model User {
-  id         Int      @id @default(autoincrement())
-  role       Role     @default(USER)
-  email      String   @unique
-  handle     String?  @unique
-  password   String
-  created_at DateTime @default(now())
-
+  id          Int          @id @default(autoincrement())
+  role        Role         @default(USER)
+  phone       String?      @unique
+  email       String?      @unique
+  handle      String?      @unique
+  password    String
+  created_at  DateTime     @default(now())
+  register_ip String?      @db.Inet
   // relation
   submissions Submission[]
   problems    Problem[]

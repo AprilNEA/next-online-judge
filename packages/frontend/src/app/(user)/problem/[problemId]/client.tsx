@@ -4,6 +4,14 @@ import { IProblem } from "@/types";
 
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Textarea } from "react-daisyui";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/theme-xcode";
+import "ace-builds/src-noconflict/ext-language_tools";
 
 export default function Client({ data }: { data: IProblem }) {
   const [userInput, setUserInput] = useState<string>();
@@ -15,28 +23,28 @@ export default function Client({ data }: { data: IProblem }) {
 
   return (
     <div>
-      <h1>Question {id}</h1>
-      <h2>{title}</h2>
-      <div>{description}</div>
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text">代码</span>
-          <select className="label-text-alt select-xs w-fit max-w-xs">
-            <option>C++</option>
-          </select>
-        </label>
-        <textarea
-          className="textarea textarea-bordered h-24"
+      <div className="text-3xl mb-10 flex whitespace-nowrap overflow-hidden mt-5">
+        Question {id} {title}
+      </div>
+      <div className="markdown-body">
+        <Markdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+        >
+          {description}
+        </Markdown>
+      </div>
+      <div className="flex w-full component-preview p-4 items-center justify-center gap-2 font-sans">
+        <AceEditor
+          theme="xcode"
+          editorProps={{ $blockScrolling: true }}
+          placeholder="Code..."
+          width="100%"
+          height="600px"
+          fontSize={18}
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          placeholder="Code"
-        ></textarea>
-        <label className="label">
-          <span className="label-text-alt"></span>
-          <span className="label-text-alt" onClick={onSubmit}>
-            提交
-          </span>
-        </label>
+          onChange={(value) => setUserInput(value)}
+        />
       </div>
     </div>
   );

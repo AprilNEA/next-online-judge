@@ -1,5 +1,4 @@
-import "@/globals.css";
-import Header from "../../components/layout/header";
+import { Header } from "@/components/layout/header";
 
 export default function UserLayout({
   children,
