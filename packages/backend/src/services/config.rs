@@ -10,7 +10,8 @@ pub fn config(cfg: &mut ServiceConfig) {
                 scope("/user")
                     .service(resource("/info").route(get().to(user::info)))
                     .service(resource("/login").route(post().to(user::login)))
-                    .service(resource("/register").route(post().to(user::register))),
+                    .service(resource("/register").route(post().to(user::register)))
+                    .service(resource("/code").route(post().to(user::request_code))),
             )
             .service(
                 scope("/problem")

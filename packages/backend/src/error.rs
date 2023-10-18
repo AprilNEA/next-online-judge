@@ -13,6 +13,8 @@ struct ErrorResponse {
 
 #[derive(Debug, Display, Error)]
 pub enum AppError {
+    #[display(fmt = "SMS request error")]
+    SMSRequestError,
     #[display(fmt = "Problem not found in database")]
     ProblemNotFound,
     #[display(fmt = "Database Error")]
@@ -24,6 +26,7 @@ pub enum AppError {
 impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match *self {
+            AppError::SMSRequestError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::ProblemNotFound => StatusCode::NOT_FOUND,
             AppError::DatabaseError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::UnknownError => StatusCode::INTERNAL_SERVER_ERROR,
