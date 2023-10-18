@@ -51,7 +51,7 @@ function AddProblemModal() {
         </div>
       </Modal.Header>
       <Modal.Body className="flex w-full h-full justify-between">
-        <div className="w-1/3">
+        <div className="w-1/3 flex flex-col">
           <div className="flex w-full component-preview p-1 items-center font-sans px-0">
             <div className="flex mr-2 items-center whitespace-nowrap">标题</div>
             <div className="form-control w-full">
@@ -65,7 +65,7 @@ function AddProblemModal() {
               />
             </div>
           </div>
-          <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+          <div className="flex w-full h-full component-preview py-1 items-center justify-center font-sans">
             <div className="flex mr-2 items-center whitespace-nowrap">描述</div>
             <div className="w-full h-full">
               <Textarea
@@ -79,7 +79,7 @@ function AddProblemModal() {
             </div>
           </div>
         </div>
-        <div className="w-2/3 pl-5">
+        <div className="w-2/3 pl-5 flex flex-col">
           <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
             <div className="flex mr-2 items-center whitespace-nowrap">输入</div>
             <div className="form-control w-full">
@@ -123,7 +123,7 @@ export default function AdminProblemPage() {
       </div>
       <ProblemList />
       <div className="font-sans">
-        <Dialog className="h-full w-full max-w-none max-h-none rounded-none">
+        <Dialog className="h-full w-full max-w-none max-h-none rounded-none flex flex-col">
           <AddProblemModal />
         </Dialog>
       </div>
