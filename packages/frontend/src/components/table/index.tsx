@@ -19,10 +19,12 @@ export type ITableHeader = {
   className?: string;
 };
 
-export function TableWithPager<T>(props: {
-  url: string;
-  headers: ITableHeader[];
-}) {
+export function TableWithPager<
+  T extends {
+    id: number;
+    [key: string]: any;
+  },
+>(props: { url: string; headers: ITableHeader[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -77,14 +79,9 @@ export function TableWithPager<T>(props: {
           </Table.Head>
           <Table.Body>
             {data.data.map((row) => (
-              // @ts-ignore
-              <Table.Row key={row.key}>
+              <Table.Row key={row.id}>
                 {props.headers.map((header) => (
-                  // @ts-ignore
-                  <span key={`${row.key}-${header.key}`}>
-                    {/*@ts-ignore*/}
-                    {row[header.key]}
-                  </span>
+                  <span key={`${row.id}-${header.key}`}>{row[header.key]}</span>
                 ))}
               </Table.Row>
             ))}
