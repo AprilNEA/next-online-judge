@@ -1,3 +1,5 @@
+use crate::entity::Role;
+use crate::utils::login_with_role;
 use crate::{
     entity::user::{UserAuthModel, UserModel},
     error::{AppError, HandleRedisError, HandleSqlxError},
@@ -12,6 +14,7 @@ use crate::{
     AppState,
 };
 use actix_identity::Identity;
+use actix_session::Session;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
@@ -82,6 +85,7 @@ pub async fn info(identity: Identity, data: web::Data<AppState>) -> Result<HttpR
 /// 处理用户登录的处理器
 pub async fn login(
     request: HttpRequest,
+    session: Session,
     body: web::Json<LoginSchema>,
     data: web::Data<AppState>,
 ) -> Result<HttpResponse, AppError> {
@@ -98,8 +102,12 @@ pub async fn login(
 
     if let Ok(is_match) = verify(&body.password, &user.password) {
         if is_match {
-            Identity::login(&request.extensions(), user.id.to_string())
-                .map_err(|_e| AppError::SessionError)?;
+            login_with_role(
+                session,
+                &request.extensions(),
+                user.id.to_string(),
+                user.role,
+            )?;
             Ok(HttpResponse::Ok().json(ResponseBuilder::success()))
         } else {
             Err(AppError::PasswordError)
@@ -209,6 +217,7 @@ pub async fn active(
 /// 用户注册：完成 account 的登记
 pub async fn register(
     request: HttpRequest,
+    session: Session,
     body: web::Json<RegisterSchema>,
     data: web::Data<AppState>,
 ) -> Result<HttpResponse, AppError> {
@@ -225,8 +234,12 @@ pub async fn register(
     .await
     .handle_sqlx_err()?;
 
-    Identity::login(&request.extensions(), new_user.id.to_string())
-        .map_err(|_e| AppError::SessionError)?;
+    login_with_role(
+        session,
+        &request.extensions(),
+        new_user.id.to_string(),
+        Role::User,
+    )?;
     Ok(HttpResponse::Ok().json(ResponseBuilder::success()))
 }
 

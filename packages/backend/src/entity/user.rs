@@ -3,6 +3,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::entity::Role;
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserSession {
+    pub id: i32,
+    pub role: Role,
+}
+
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 pub struct UserModel {
     pub id: i32,

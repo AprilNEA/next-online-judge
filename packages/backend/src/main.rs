@@ -7,19 +7,24 @@ mod schema;
 mod services;
 mod utils;
 mod worker;
-use dotenv::dotenv;
+use crate::{
+    dao::get_user_by_id,
+    entity::Role,
+    utils::parse_user_id,
+    worker::{compile_worker, run_worker},
+};
+use actix_cors::Cors;
+use actix_identity::{Identity, IdentityMiddleware};
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{
     cookie::Key,
     dev::{Payload, ServiceRequest},
     web, App, Error, FromRequest, HttpServer,
 };
-use actix_cors::Cors;
-use actix_identity::{Identity, IdentityMiddleware};
-use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web_grants::GrantsMiddleware;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
-use crate::{dao::get_user_by_id,entity::Role ,utils::parse_user_id,worker::{compile_worker, run_worker},};
+use dotenv::dotenv;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tokio::spawn;
 
@@ -38,6 +43,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<Role>, Error> {
         Err(_) => return Ok(vec![]),
     };
     let data = req.app_data::<web::Data<AppState>>().unwrap();
+    
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
         .unwrap();
@@ -114,7 +120,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(IdentityMiddleware::default())
-            .wrap(SessionMiddleware::builder(redis_store.clone(), secret_key.clone()).build())
+            .wrap(
+                SessionMiddleware::builder(redis_store.clone(), secret_key.clone())
+                    .cookie_name(String::from("SESSION_ID"))
+                    .build(),
+            )
             .app_data(web::Data::new(AppState {
                 db_pool: db_pool.clone(),
                 redis_pool: redis_pool.clone(),
