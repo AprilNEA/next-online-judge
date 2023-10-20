@@ -3,7 +3,6 @@ use actix_web::dev::Payload;
 use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, FromRequest, HttpRequest};
 use futures::future::{ready, Ready};
-
 pub struct LoggedUser {
     pub id: String,
 }

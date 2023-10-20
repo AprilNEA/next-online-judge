@@ -1,8 +1,10 @@
-use crate::entity::user::UserPublicModel;
+/// Here is the database helper to access data
+use crate::entity::{
+    problem::{ProblemModel, SubmissionModel},
+    user::UserPublicModel,
+    SubmissionStatus,
+};
 use sqlx::{Error, PgPool};
-
-use crate::entity::problem::{ProblemModel, SubmissionModel};
-use crate::entity::SubmissionStatus;
 
 pub async fn get_user_by_id(db_pool: &PgPool, user_id: i32) -> Result<UserPublicModel, Error> {
     sqlx::query_as::<_, UserPublicModel>(

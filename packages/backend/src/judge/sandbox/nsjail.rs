@@ -1,16 +1,16 @@
 use crate::judge::{sandbox::Sandbox, JudgeError};
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
-use uuid::Uuid;
+// use uuid::Uuid;
 
 pub struct NsJail;
 
-const CHROOT_PATH: &str = "/tmp/online-judge";
+const CHROOT_PATH: &str = "./tmp";
 
 impl Sandbox for NsJail {
-    fn compile(&self, input_code: String) -> Result<String, JudgeError> {
-        let output_filename = Uuid::new_v4().to_string();
-        let output_path = format!("{}/{}", CHROOT_PATH, output_filename);
+    fn compile(&self, id: String, input_code: String) -> Result<String, JudgeError> {
+        // let output_filename = Uuid::new_v4().to_string();
+        let output_path = format!("{}/{}", CHROOT_PATH, id);
 
         let mut child = Command::new("g++")
             .arg("-x") // Interpret next arg as source file type
@@ -32,7 +32,7 @@ impl Sandbox for NsJail {
         if !compile_status.success() {
             return Err(JudgeError::CompileError);
         }
-        Ok(output_filename)
+        Ok(id)
     }
 
     fn run(&self, filename: String, input: Option<&str>) -> Result<String, JudgeError> {

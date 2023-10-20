@@ -1,9 +1,9 @@
-import { BASE } from "@/constant";
 import type { IProblem } from "@/types";
 import Client from "./client";
+import { fetcher } from "@/utils";
 
 async function getProblem(id: number) {
-  const response = await fetch(`${BASE}/problem/${id}`);
+  const response = await fetcher(`/problem/${id}`);
   return (await response.json()) as IProblem;
 }
 

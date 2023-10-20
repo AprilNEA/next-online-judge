@@ -41,28 +41,34 @@ enum SubmissionStatus {
 
 // 用户
 model User {
-  id         Int      @id @default(autoincrement())
-  role       Role     @default(USER)
-  email      String   @unique
-  handle     String?  @unique
-  password   String
-  created_at DateTime @default(now())
-
+  id          Int          @id @default(autoincrement())
+  role        Role         @default(USER)
+  phone       String?      @unique
+  email       String?      @unique
+  handle      String?      @unique
+  password    String?
+  created_at  DateTime     @default(now())
+  register_ip String?      @db.Inet
   // relation
   submissions Submission[]
+  problems    Problem[]
+  testCases   TestCase[]
 
   @@map("user")
 }
 
 // 问题
 model Problem {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String   @db.Text
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String   @db.Text
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+  created_user_id Int
 
   // relation
+  created_user User @relation(fields: [created_user_id], references: [id])
+
   testcases   TestCase[]
   submissions Submission[]
 
@@ -79,8 +85,11 @@ model TestCase {
   input  String @db.Text
   output String @db.Text
 
+  created_user_id Int
+
   // relation
-  problem Problem @relation(fields: [problem_id], references: [id])
+  problem      Problem @relation(fields: [problem_id], references: [id])
+  created_user User    @relation(fields: [created_user_id], references: [id])
 
   @@map("testcase")
 }
