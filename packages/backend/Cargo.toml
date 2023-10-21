@@ -39,8 +39,6 @@ sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgr
 bb8 = "0.8.1"
 bb8-redis = "0.13.1"
 
-
-
 [dependencies.uuid]
 version = "1.4.1"
 features = [

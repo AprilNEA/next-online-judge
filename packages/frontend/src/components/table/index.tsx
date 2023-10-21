@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-
+import Link from "next/link";
 import { Table, Pagination, Button, Select } from "react-daisyui";
 
 import { fetcher } from "@/utils";
@@ -30,10 +30,10 @@ export function TableWithPager<
   const searchParams = useSearchParams();
 
   const [size, setSize] = useState(
-    parseInt(searchParams.get("size") ?? "20", 10),
+    parseInt(searchParams.get("size") ?? "20", 10)
   );
   const [page, setPage] = useState(
-    parseInt(searchParams.get("page") ?? "1", 10),
+    parseInt(searchParams.get("page") ?? "1", 10)
   );
 
   const { data, isLoading } = useSWR(
@@ -41,7 +41,7 @@ export function TableWithPager<
     (url: string) =>
       fetcher(url).then((res) => {
         return res.json();
-      }) as Promise<IPager<T>>,
+      }) as Promise<IPager<T>>
   );
 
   function updatePage({

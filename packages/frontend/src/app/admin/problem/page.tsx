@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal, Input, Textarea } from "react-daisyui";
+import { Button, Modal, Input, Textarea, Table } from "react-daisyui";
 import { ProblemList } from "@/app/admin/problem/problem";
 import { useState } from "react";
 import { fetcher } from "@/utils";
@@ -81,6 +81,7 @@ function AddProblemModal() {
         </div>
         <div className="w-2/3 pl-5 flex flex-col">
           <div className="flex w-full component-preview py-1 items-center justify-center font-sans">
+            {/*todo: Table issue*/}
             <div className="flex mr-2 items-center whitespace-nowrap">输入</div>
             <div className="form-control w-full">
               <Textarea

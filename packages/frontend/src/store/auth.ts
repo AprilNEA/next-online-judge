@@ -1,6 +1,4 @@
 import { create, StateCreator } from "zustand";
-import toast from "react-hot-toast";
-import { fetcher } from "@/utils";
 import { IAppStore, IAuthSlice, IAuthModal } from "@/types/store";
 
 export const createAuthSlice: StateCreator<IAppStore, [], [], IAuthSlice> = (
@@ -9,6 +7,9 @@ export const createAuthSlice: StateCreator<IAppStore, [], [], IAuthSlice> = (
 ) => ({
   isLogin: false,
   authModal: "login",
+  errorText: "",
+  verificationDelay: false,
+  isForceInit: false,
   updateAuthModal: (authModal: IAuthModal) => {
     set({ authModal });
   },
@@ -24,23 +25,19 @@ export const createAuthSlice: StateCreator<IAppStore, [], [], IAuthSlice> = (
   updateConfirmPassword: (confirmPassword: string) => {
     set({ confirmPassword });
   },
-  updateVerificationCode: (verificationCode: number) => {
+  updateVerificationCode: (verificationCode: string) => {
     set({ verificationCode });
   },
-  requestCode: () => {},
   updateLoginStatus: (isLogin: boolean) => {
     set({ isLogin });
   },
-  register: () => {
-    const { account, password, confirmPassword, verificationCode } = get();
-    if (!account) {
-      toast("请输入邮箱");
-    }
-    if (!password || !confirmPassword || password != confirmPassword) {
-      toast("两次输入的密码不一致");
-    }
-    if (!verificationCode) {
-      toast("请输入验证码");
-    }
+  updateVerificationDelay: (verificationDelay: boolean | number) => {
+    set({ verificationDelay });
+  },
+  updateErrorText: (errorText: string) => {
+    set({ errorText });
+  },
+  updateIsForceInit: (isForceInit: boolean) => {
+    set({ isForceInit });
   },
 });

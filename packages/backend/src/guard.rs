@@ -1,7 +1,11 @@
+use crate::dao::get_user_by_id;
+use crate::entity::Role;
+use crate::utils::parse_user_id;
+use crate::AppState;
 use actix_identity::Identity;
-use actix_web::dev::Payload;
+use actix_web::dev::{Payload, ServiceRequest};
 use actix_web::error::ErrorUnauthorized;
-use actix_web::{Error, FromRequest, HttpRequest};
+use actix_web::{web, Error, FromRequest, HttpMessage, HttpRequest};
 use futures::future::{ready, Ready};
 pub struct LoggedUser {
     pub id: String,

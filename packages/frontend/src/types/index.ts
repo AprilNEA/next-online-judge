@@ -29,6 +29,7 @@ export enum SubmissionStatus {
 export type IUserInfo = {
   id: number;
   role: Role;
+  status: string;
   email: string;
   handle: string;
 };

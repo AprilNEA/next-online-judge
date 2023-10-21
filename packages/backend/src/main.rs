@@ -43,7 +43,7 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<Role>, Error> {
         Err(_) => return Ok(vec![]),
     };
     let data = req.app_data::<web::Data<AppState>>().unwrap();
-    
+
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
         .unwrap();
