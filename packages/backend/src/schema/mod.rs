@@ -27,7 +27,7 @@ impl<T> ResponseBuilder<T> {
 
     pub fn failed(data: T) -> Self {
         ResponseBuilder {
-            success: true,
+            success: false,
             data: Some(data),
         }
     }
