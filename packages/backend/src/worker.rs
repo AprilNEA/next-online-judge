@@ -1,7 +1,5 @@
 use crate::dao::{get_submission_by_id, update_submission_status};
 use crate::entity::SubmissionStatus;
-use crate::judge::sandbox::nsjail::NsJail;
-use crate::judge::sandbox::Sandbox;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::AsyncCommands;
@@ -10,7 +8,7 @@ use sqlx::PgPool;
 pub async fn compile_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionManager>) {
     println!("[Worker][Compile] Worker is right");
     let mut conn = redis_pool.get().await.unwrap();
-    let jail = NsJail;
+    ;
     loop {
         let task_data: Option<(String, String)> =
             conn.brpop("compile_task_queue", 0).await.unwrap();
@@ -25,12 +23,12 @@ pub async fn compile_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionMan
                             "[Worker][Compile] Error: no submission {}",
                             submission_id
                         ));
-                let username = jail
-                    .compile(submission_id.to_string(), submission.code)
-                    .expect(&*format!(
-                        "[Worker][Compile] Error: compile error {}",
-                        submission_id
-                    ));
+                // let username = jail
+                //     .compile(submission_id.to_string(), submission.code)
+                //     .expect(&*format!(
+                //         "[Worker][Compile] Error: compile error {}",
+                //         submission_id
+                //     ));
                 update_submission_status(&db_pool, submission_id, SubmissionStatus::Compiling)
                     .await
                     .expect(&*format!(

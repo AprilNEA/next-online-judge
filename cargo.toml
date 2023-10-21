@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "packages/backend",
+    "packages/nsjail-rust"
+]

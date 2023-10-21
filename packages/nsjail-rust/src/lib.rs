@@ -1,16 +1,21 @@
-use crate::judge::{sandbox::Sandbox, JudgeError};
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
-// use uuid::Uuid;
 
-pub struct NsJail;
+#[derive(Debug)]
+pub enum JudgeError {
+    FileNotFound,
+    CompileError,
+    RunningError,
+    UnexpectedError(String),
+}
 
-const CHROOT_PATH: &str = "./tmp";
+pub struct NsJail {
+    chroot_path: String,
+}
 
-impl Sandbox for NsJail {
-    fn compile(&self, id: String, input_code: String) -> Result<String, JudgeError> {
-        // let output_filename = Uuid::new_v4().to_string();
-        let output_path = format!("{}/{}", CHROOT_PATH, id);
+impl NsJail {
+    fn compile(&self, unique_od: String, input_code: String) -> Result<String, JudgeError> {
+        let output_path = format!("{}/{}", self.chroot_path, unique_od);
 
         let mut child = Command::new("g++")
             .arg("-x") // Interpret next arg as source file type
@@ -32,11 +37,11 @@ impl Sandbox for NsJail {
         if !compile_status.success() {
             return Err(JudgeError::CompileError);
         }
-        Ok(id)
+        Ok(unique_od)
     }
 
     fn run(&self, filename: String, input: Option<&str>) -> Result<String, JudgeError> {
-        let output_path = format!("{}/{}", CHROOT_PATH, filename);
+        let output_path = format!("{}/{}", self.chroot_path, filename);
         let mut child = Command::new("nsjail")
             .arg("-Me")
             .arg("--rlimit_cpu=2")
@@ -44,7 +49,7 @@ impl Sandbox for NsJail {
             .arg("--rlimit_fsize=10")
             .arg("--user 99999")
             .arg("--group 99999")
-            .arg(format!("--chroot={}", CHROOT_PATH))
+            .arg(format!("--chroot={}", self.chroot_path))
             // .arg(format!("--bindmount_ro={}", libs_path))
             // .arg("--seccomp_string=read write open openat close newstat newfstat")
             .arg(&output_path)
@@ -66,7 +71,6 @@ impl Sandbox for NsJail {
             return Err(JudgeError::RunningError);
         }
 
-        // Convert the captured output to a String
         let result = String::from_utf8(output.stdout)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
             .unwrap();

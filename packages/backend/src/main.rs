@@ -2,11 +2,12 @@ mod dao;
 mod entity;
 mod error;
 mod guard;
-mod judge;
 mod schema;
 mod services;
 mod utils;
 mod worker;
+
+
 use crate::{
     dao::get_user_by_id,
     entity::Role,
@@ -132,7 +133,7 @@ async fn main() -> std::io::Result<()> {
             .configure(crate::services::config::config)
             .wrap(cors)
     })
-    .bind(("0.0.0.0", 8080))?
-    .run()
-    .await
+        .bind(("0.0.0.0", 8080))?
+        .run()
+        .await
 }
