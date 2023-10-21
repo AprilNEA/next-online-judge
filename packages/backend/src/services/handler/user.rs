@@ -24,6 +24,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use redis::AsyncCommands;
 use regex::Regex;
 use reqwest;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// 根据特征提取 email, phone 和 handle
@@ -56,30 +57,37 @@ async fn validate_code(
 }
 
 /// 这是用户获取用户信息的处理器, 当用户未完成激活时会提示用户激活, 体现在 status 字段中
-pub async fn info(identity: Identity, data: web::Data<AppState>) -> Result<HttpResponse, AppError> {
-    let user = sqlx::query_as::<_, UserModel>(
-        r#"
-        SELECT id, role, email, phone, handle, password, created_at FROM public.user WHERE id = $1
-        "#,
-    )
-    .bind(parse_user_id(identity))
-    .fetch_one(&data.db_pool)
-    .await
-    .handle_sqlx_err()?;
+pub async fn info(
+    identity: Option<Identity>,
+    data: web::Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    if let Some(identity) = identity {
+        let user = sqlx::query_as::<_, UserModel>(
+            r#"
+            SELECT id, role, email, phone, handle, password, created_at FROM public.user WHERE id = $1
+            "#,
+        )
+        .bind(parse_user_id(identity))
+        .fetch_one(&data.db_pool)
+        .await
+        .handle_sqlx_err()?;
 
-    let mut response = InfoResponse {
-        id: user.id.clone(),
-        role: user.role.clone(),
-        handle: user.handle.clone(),
-        status: UserStatus::Normal,
-    };
+        let mut response = InfoResponse {
+            id: user.id.clone(),
+            role: user.role.clone(),
+            handle: user.handle.clone(),
+            status: UserStatus::Normal,
+        };
 
-    if let (Some(_handle), Some(_password)) = (&user.handle, &user.password) {
+        if let (Some(_handle), Some(_password)) = (&user.handle, &user.password) {
+        } else {
+            response.status = UserStatus::InActive;
+        }
+
+        Ok(HttpResponse::Ok().json(ResponseBuilder::<InfoResponse>::success(response)))
     } else {
-        response.status = UserStatus::InActive;
+        Ok(HttpResponse::Ok().json(ResponseBuilder::<&str>::failed("Not login")))
     }
-
-    Ok(HttpResponse::Ok().json(response))
 }
 
 /// 处理用户登录的处理器
@@ -108,7 +116,7 @@ pub async fn login(
                 user.id.to_string(),
                 user.role,
             )?;
-            Ok(HttpResponse::Ok().json(ResponseBuilder::success()))
+            Ok(HttpResponse::Ok().json(ResponseBuilder::<()>::success_without_data()))
         } else {
             Err(AppError::PasswordError)
         }
@@ -117,8 +125,13 @@ pub async fn login(
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct CodeTTL {
+    ttl: i32,
+}
+
 /// 请求验证码，自动识别邮箱和手机号，可用于注册和找回密码
-pub async fn request_code(
+pub async fn code(
     body: web::Json<CodeRequestSchema>,
     data: web::Data<AppState>,
 ) -> Result<HttpResponse, AppError> {
@@ -127,7 +140,11 @@ pub async fn request_code(
     let exist_ttl: i32 = conn.ttl(&key).await.handle_redis_err()?;
     match exist_ttl {
         ttl if ttl >= 240 => {
-            return Ok(HttpResponse::TooManyRequests().json(format!("{{\"ttl\":{}}}", 300 - ttl)))
+            return Ok(
+                HttpResponse::TooManyRequests().json(ResponseBuilder::<CodeTTL>::failed(CodeTTL {
+                    ttl: 300 - ttl,
+                })),
+            );
         }
         _ => (),
     }
@@ -179,12 +196,17 @@ pub async fn request_code(
 
     if res.code == "0" {
         let _: () = conn.set_ex(&key, code, 300).await.handle_redis_err()?;
-        Ok(HttpResponse::Ok().json(ResponseBuilder::success())) // Return the response if the code is "0".
+        Ok(HttpResponse::Ok().json(ResponseBuilder::<()>::success_without_data()))
+    // Return the response if the code is "0".
     } else {
         Err(AppError::SMSRequestError) // Assume you have an SMSError variant in AppError.
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct ActiveSuccess {
+    handle: String,
+}
 /// 用户激活：注册 handle 和 password
 pub async fn active(
     identity: Identity,
@@ -209,7 +231,11 @@ pub async fn active(
     .execute(&data.db_pool)
     .await
     {
-        Ok(_) => Ok(HttpResponse::Ok().body("")),
+        Ok(_) => Ok(
+            HttpResponse::Ok().json(ResponseBuilder::<ActiveSuccess>::success(ActiveSuccess {
+                handle: body.handle.clone(),
+            })),
+        ),
         Err(_) => Err(AppError::DatabaseError),
     }
 }
@@ -240,7 +266,7 @@ pub async fn register(
         new_user.id.to_string(),
         Role::User,
     )?;
-    Ok(HttpResponse::Ok().json(ResponseBuilder::success()))
+    Ok(HttpResponse::Ok().json(ResponseBuilder::<()>::success_without_data()))
 }
 
 /// 用户找回密码
@@ -250,5 +276,5 @@ pub async fn forget(
 ) -> Result<HttpResponse, AppError> {
     validate_code(&data.redis_pool, body.account.clone(), body.code.clone()).await?;
 
-    Ok(HttpResponse::Ok().json(ResponseBuilder::success()))
+    Ok(HttpResponse::Ok().json(ResponseBuilder::<()>::success_without_data()))
 }
