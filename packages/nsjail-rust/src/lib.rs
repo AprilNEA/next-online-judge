@@ -14,8 +14,8 @@ pub struct NsJail {
 }
 
 impl NsJail {
-    fn compile(&self, unique_od: String, input_code: String) -> Result<String, JudgeError> {
-        let output_path = format!("{}/{}", self.chroot_path, unique_od);
+    fn compile(&self, unique_id: String, input_code: String) -> Result<String, JudgeError> {
+        let output_path = format!("{}/{}", self.chroot_path, unique_id);
 
         let mut child = Command::new("g++")
             .arg("-x") // Interpret next arg as source file type
@@ -37,22 +37,28 @@ impl NsJail {
         if !compile_status.success() {
             return Err(JudgeError::CompileError);
         }
-        Ok(unique_od)
+        Ok(unique_id)
     }
 
-    fn run(&self, filename: String, input: Option<&str>) -> Result<String, JudgeError> {
-        let output_path = format!("{}/{}", self.chroot_path, filename);
-        let mut child = Command::new("nsjail")
+    fn run(&self, unique_id: String, input: Option<&str>) -> Result<String, JudgeError> {
+        let output_path = format!("{}/{}", self.chroot_path, unique_id);
+
+        let mut child = Command::new("sudo")
+            .arg("-u")
+            .arg("nsjail")
+            .arg("nsjail")
             .arg("-Me")
-            .arg("--rlimit_cpu=2")
+            .arg("--quiet")
+            .arg("--disable_proc")
+            .arg("--chroot=/")
+            .arg("--rlimit_cpu=1")
             .arg("--rlimit_as=128")
             .arg("--rlimit_fsize=10")
-            .arg("--user 99999")
-            .arg("--group 99999")
-            .arg(format!("--chroot={}", self.chroot_path))
-            // .arg(format!("--bindmount_ro={}", libs_path))
-            // .arg("--seccomp_string=read write open openat close newstat newfstat")
-            .arg(&output_path)
+            // .arg("--user 99999")
+            // .arg("--group 99999")
+            // .arg("--seccomp_string=read write open openat close newstat newfstat"
+            .arg("--")
+            .arg(format!("{}", output_path))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
@@ -76,5 +82,55 @@ impl NsJail {
             .unwrap();
 
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::NsJail;
+
+    #[test]
+    fn test_hello() {
+        let test_name = String::from("test_hello");
+        let nsjail = NsJail {
+            chroot_path: "/root/next-online-judge/tmp".parse().unwrap(),
+        };
+        let name = nsjail.compile(
+            test_name.clone(),
+            String::from(
+                r#"
+                #include <iostream>
+                int main(){
+                    std::cout << "Hello, World!" << std::endl;
+                    return 0;
+                }"#,
+            ),
+        );
+        assert_eq!(name.unwrap(), test_name.clone());
+        let result = nsjail.run(test_name.clone(), None);
+        assert_eq!(result.unwrap().to_string(), "Hello, World!\n");
+    }
+
+    #[test]
+    fn test_add() {
+        let test_name = String::from("test_add");
+        let nsjail = NsJail {
+            chroot_path: "/root/next-online-judge/tmp".parse().unwrap(),
+        };
+        let code = String::from(
+            r#"
+        #include <iostream>
+        int main() {
+            int a, b;
+            std::cin >> a >> b;
+            std::cout << (a + b) << std::endl;
+            return 0;
+        }
+        "#,
+        );
+        let name = nsjail.compile(test_name.clone(), code);
+        assert_eq!(name.unwrap(), test_name.clone());
+        let result = nsjail.run(test_name.clone(), Some("5\n3\n"));
+        assert_eq!(result.unwrap().to_string(), "8\n");
     }
 }
