@@ -139,10 +139,10 @@ pub async fn code(
     let key = format!("validate_code:{}", &body.account);
     let exist_ttl: i32 = conn.ttl(&key).await.handle_redis_err()?;
     match exist_ttl {
-        ttl if ttl >= 240 => {
+        ttl if ttl > 240 => {
             return Ok(
                 HttpResponse::TooManyRequests().json(ResponseBuilder::<CodeTTL>::failed(CodeTTL {
-                    ttl: 300 - ttl,
+                    ttl: ttl - 240,
                 })),
             );
         }
