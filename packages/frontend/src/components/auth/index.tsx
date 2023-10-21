@@ -12,6 +12,7 @@ import PhoneIcon from "@/icons/phone.svg";
 import toast from "react-hot-toast";
 import { fetcher } from "@/utils";
 import { useEffect, useMemo, useState } from "react";
+import { useSWRConfig } from "swr";
 
 function LoginForm() {
   const { account, updateAccount, password, updatePassword } = useAppStore();
@@ -74,7 +75,7 @@ function RegisterForm() {
       }
       countDown = setInterval(() => {
         updateVerificationDelay(verificationDelay - 1);
-      },1000);
+      }, 1000);
     }
 
     return () => {
@@ -91,7 +92,7 @@ function RegisterForm() {
       return;
     }
     if (typeof verificationDelay == "number" && verificationDelay) {
-      updateErrorText(`还需等候${verificationDelay}才能再次发送验证码`);
+      updateErrorText(`还需等候${verificationDelay}秒才能再次发送验证码`);
       return;
     }
     if (typeof verificationDelay == "boolean" && verificationDelay) {
@@ -105,16 +106,16 @@ function RegisterForm() {
         account: account,
       }),
     })
-      .then((res) => {
-        if (res.ok) {
-          updateVerificationDelay(60);
-        }
-        return res;
-      })
       .then((res) => res.json())
       .then((res) => {
-        if (res.delay) {
-          updateVerificationDelay(res.delay);
+        if (res.success) {
+          updateVerificationDelay(60);
+          return;
+        }
+        if (!res.success) {
+          updateVerificationDelay(res.data.ttl);
+          updateErrorText(`还需等候${res.data.ttl}秒才能再次发送验证码`);
+          return;
         }
       });
   }
@@ -152,16 +153,19 @@ function RegisterForm() {
           />
           {typeof verificationDelay == "boolean" ? (
             verificationDelay ? (
-              <Button disabled>
+              <Button disabled className="w-[65px]">
                 <Loading />
               </Button>
             ) : (
-              <Button onClick={sendVerification}>
+              <Button className="w-[65px]" onClick={sendVerification}>
                 <SendIcon />
               </Button>
             )
           ) : typeof verificationDelay == "number" ? (
-            <Button disabled>{`${verificationDelay}秒`}</Button>
+            <Button
+              disabled
+              className="w-[65px]"
+            >{`${verificationDelay}秒`}</Button>
           ) : (
             "ERR"
           )}
@@ -176,6 +180,7 @@ function CodeForm() {
 }
 
 function AuthModal({ hide }: { hide: () => void }) {
+  const { mutate } = useSWRConfig();
   const {
     authModal,
     updateAuthModal,
@@ -211,7 +216,7 @@ function AuthModal({ hide }: { hide: () => void }) {
         register: <RegisterForm />,
       },
     }),
-    [authModal]
+    [authModal],
   );
 
   async function handleAuth() {
@@ -222,28 +227,29 @@ function AuthModal({ hide }: { hide: () => void }) {
           updateErrorText("请输入用户名和密码");
           return;
         }
+        setIsLoading(true);
         await fetcher("/user/login", {
           method: "POST",
           body: JSON.stringify({
-            email: account,
-            password,
+            account: account,
+            password: password,
           }),
-        }).then((res) => {
-          setIsLoading(false);
-          if (res.ok) {
-            toast("登录成功", {
-              icon: "🔥",
-              duration: 5000,
-              style: {
-                zIndex: 10000,
-              },
-            });
-            updateErrorText("");
-            hide();
-          } else {
-            updateErrorText("用户名或密码不正确");
-          }
-        });
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            setIsLoading(false);
+            if (res.success) {
+              toast("登录成功", {
+                icon: "🔥",
+                duration: 5000,
+              });
+              updateErrorText("");
+              mutate("/user/info");
+              hide();
+            } else {
+              updateErrorText("用户名或密码不正确");
+            }
+          });
         break;
       case "register":
         //@ts-ignore
@@ -255,80 +261,82 @@ function AuthModal({ hide }: { hide: () => void }) {
           updateErrorText("请输入验证码");
           return;
         }
+        setIsLoading(true);
         await fetcher("/user/register", {
           method: "POST",
           body: JSON.stringify({
             account: account,
-            password: password,
             code: verificationCode,
           }),
-        }).then((res) => {
-          if (res.ok) {
-            updateIsForceInit(true);
-          } else {
-            let r = res.json();
-          }
-        });
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            setIsLoading(false);
+            if (res.success) {
+              updateIsForceInit(true);
+            } else {
+              updateErrorText("发生了未知错误");
+            }
+          });
         break;
     }
   }
 
-  if(!isForceInit) return (
-    <>
-      <Modal.Header className="items-center flex justify-center mb-3 pl-3">
-        <div>
-          <div className="font-bold text-2xl">{render.title[authModal]}</div>
-          <div className="text-sm text-red-600">{errorText}</div>
-        </div>
-        <Button
-          className="btn-ghost ml-auto px-2"
-          onClick={() => {
-            updateAuthModal(authModal == "code" ? "login" : "code");
-            updateErrorText("");
-          }}
-        >
-          {authModal == "code" ? <ReturnIcon /> : <CodeIcon />}
-        </Button>
-      </Modal.Header>
-      <Modal.Body>{render.form[authModal]}</Modal.Body>
-      <Modal.Actions className="flex justify-between">
-        <Button
-          className="btn-ghost"
-          onClick={() => {
-            updateAuthModal(authModal == "login" ? "register" : "login");
-            updateErrorText("");
-          }}
-        >
-          {render.left[authModal]}
-        </Button>
-        <div className="flex">
-          <form method="dialog">
-            <Button className="btn-ghost mr-1">取消</Button>
-          </form>
+  if (!isForceInit)
+    return (
+      <>
+        <Modal.Header className="items-center flex justify-center mb-3 pl-3">
+          <div>
+            <div className="font-bold text-2xl">{render.title[authModal]}</div>
+            <div className="text-sm text-red-600">{errorText}</div>
+          </div>
+          <Button
+            className="btn-ghost ml-auto px-2"
+            onClick={() => {
+              updateAuthModal(authModal == "code" ? "login" : "code");
+              updateErrorText("");
+            }}
+          >
+            {authModal == "code" ? <ReturnIcon /> : <CodeIcon />}
+          </Button>
+        </Modal.Header>
+        <Modal.Body>{render.form[authModal]}</Modal.Body>
+        <Modal.Actions className="flex justify-between">
+          <Button
+            className="btn-ghost"
+            onClick={() => {
+              updateAuthModal(authModal == "login" ? "register" : "login");
+              updateErrorText("");
+            }}
+          >
+            {render.left[authModal]}
+          </Button>
+          <div className="flex">
+            <form method="dialog">
+              <Button className="btn-ghost mr-1">取消</Button>
+            </form>
 
-          {!isLoading ? (
-            <Button
-              className="bg-black text-white hover:bg-gray-500"
-              onClick={handleAuth}
-            >
-              {render.right[authModal]}
-            </Button>
-          ) : (
-            <Button disabled>
-              <Loading />
-            </Button>
-          )}
-        </div>
-      </Modal.Actions>
-    </>
-  );
-
-  else return(
-    <AccountInitModal />
-  )
+            {!isLoading ? (
+              <Button
+                className="bg-black text-white hover:bg-gray-500 w-[62px]"
+                onClick={handleAuth}
+              >
+                {render.right[authModal]}
+              </Button>
+            ) : (
+              <Button disabled className="w-[62px]">
+                <Loading />
+              </Button>
+            )}
+          </div>
+        </Modal.Actions>
+      </>
+    );
+  else return <AccountInitModal hide={hide} />;
 }
 
-function AccountInitModal() {
+export function AccountInitModal({ hide }: { hide: () => void }) {
+  const { mutate } = useSWRConfig();
   const {
     errorText,
     updateErrorText,
@@ -336,6 +344,7 @@ function AccountInitModal() {
     updatePassword,
     confirmPassword,
     updateConfirmPassword,
+    updateIsForceInit,
     account,
   } = useAppStore();
 
@@ -359,9 +368,19 @@ function AccountInitModal() {
         password: password,
         handle: userName,
       }),
-    }).then((res) => {
-
-    });
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success) {
+          toast("注册成功", {
+            icon: "🔥",
+            duration: 5000,
+          });
+          updateIsForceInit(false);
+          mutate("/user/info");
+          hide();
+        }
+      });
   }
 
   return (
@@ -437,7 +456,7 @@ function AccountInitModal() {
   );
 }
 
-export default function Auth() {
+export function Auth() {
   const { Dialog, handleShow, handleHide } = Modal.useDialog();
 
   return (

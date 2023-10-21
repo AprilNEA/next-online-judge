@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Auth from "@/components/auth";
-import { Button, Dropdown, Menu, Navbar } from "react-daisyui";
+import { Auth, AccountInitModal } from "@/components/auth";
+import { Button, Dropdown, Menu, Navbar, Modal } from "react-daisyui";
 import useInfo from "@/hooks/use-info";
-import { useAppStore } from "@/store";
-import { useEffect } from "react";
+import { fetcher } from "@/utils";
+import { useSWRConfig } from "swr";
+import toast from "react-hot-toast";
 
 const navs = [
   {
@@ -39,15 +40,24 @@ const adminNavs = [
 
 export function Header() {
   const { userInfo } = useInfo();
-  //const { updateIsForceInit } = useAppStore();
+  const { mutate } = useSWRConfig();
+  const { Dialog, handleShow, handleHide } = Modal.useDialog();
 
-/*
-  useEffect(() => {
-    if(userInfoLoading) return;
-    //@ts-ignore
-    if(userInfo.status = "inactive") updateIsForceInit(true);
-    return () => updateIsForceInit(false);
-  },[updateIsForceInit, userInfo, userInfoLoading])*/
+  function handleLogout() {
+    fetcher("/user/logout", {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success) {
+          mutate("/user/info");
+          toast("登出成功", {
+            icon: "🔥",
+            duration: 5000,
+          });
+        }
+      });
+  }
 
   return (
     <div className="flex justify-center">
@@ -95,7 +105,21 @@ export function Header() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {userInfo ? <span>{userInfo.handle}</span> : <Auth />}
+          {userInfo ? (
+            <>
+              <span>{userInfo.handle}</span>
+              <Button className="ml-3" onClick={handleLogout}>
+                登出
+              </Button>
+            </>
+          ) : (
+            <Auth />
+          )}
+          {userInfo && userInfo.status == "inactive" ? (
+            <Dialog onLoad={handleShow}>
+              <AccountInitModal hide={handleHide} />
+            </Dialog>
+          ) : null}
         </Navbar.End>
       </Navbar>
     </div>

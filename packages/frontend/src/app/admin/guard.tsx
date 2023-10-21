@@ -1,7 +1,7 @@
 "use client";
 
 import useInfo from "@/hooks/use-info";
-import Loading from "@/components/layout/loading"
+import Loading from "@/components/layout/loading";
 
 export default function AdminGuard({
   children,

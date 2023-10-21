@@ -4,14 +4,15 @@ import { IProblem } from "@/types";
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Textarea } from "react-daisyui";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import AceEditor from "react-ace";
-import "ace-builds/src-noconflict/theme-xcode";
-import "ace-builds/src-noconflict/ext-language_tools";
+import "ace-builds/src-min-noconflict/theme-textmate";
+import "ace-builds/src-min-noconflict/mode-c_cpp";
+import "ace-builds/src-min-noconflict/ext-language_tools";
+import "ace-builds/src-min-noconflict/ext-statusbar";
 import { Button, Divider } from "react-daisyui";
 import { fetcher } from "@/utils";
 
@@ -21,7 +22,6 @@ export default function Client({ data }: { data: IProblem }) {
 
   function submitCode() {
     toast("你的代码已提交");
-
   }
 
   return (
@@ -38,9 +38,10 @@ export default function Client({ data }: { data: IProblem }) {
         </Markdown>
         <Divider></Divider>
       </div>
-      <div className="flex w-full component-preview p-4 items-center justify-center gap-2 font-sans">
+      <div className="flex w-full component-preview my-4 items-center justify-center gap-2 font-sans border-2 rounded-lg overflow-hidden">
         <AceEditor
-          theme="xcode"
+          theme="textmate"
+          mode="c_cpp"
           editorProps={{ $blockScrolling: true }}
           placeholder="Code..."
           width="100%"
