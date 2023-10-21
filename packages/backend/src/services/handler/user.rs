@@ -58,16 +58,16 @@ async fn validate_code(
 
 /// 这是用户获取用户信息的处理器, 当用户未完成激活时会提示用户激活, 体现在 status 字段中
 pub async fn info(
-    identity: Option<Identity>,
+    user: Option<Identity>,
     data: web::Data<AppState>,
 ) -> Result<HttpResponse, AppError> {
-    if let Some(identity) = identity {
+    if let Some(user) = user {
         let user = sqlx::query_as::<_, UserModel>(
             r#"
             SELECT id, role, email, phone, handle, password, created_at FROM public.user WHERE id = $1
             "#,
         )
-        .bind(parse_user_id(identity))
+        .bind(parse_user_id(user))
         .fetch_one(&data.db_pool)
         .await
         .handle_sqlx_err()?;
@@ -123,6 +123,11 @@ pub async fn login(
     } else {
         Err(AppError::CryptError)
     }
+}
+
+pub async fn logout(user: Identity) -> impl Responder {
+    user.logout();
+    HttpResponse::Ok().json(ResponseBuilder::<()>::success_without_data())
 }
 
 #[derive(Debug, Deserialize, Serialize)]
