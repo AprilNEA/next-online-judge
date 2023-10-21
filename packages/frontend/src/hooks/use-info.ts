@@ -6,11 +6,12 @@ export default function useInfo() {
   const { data, isLoading } = useSWR<IUserInfo>(
     "/user/info",
     (url: string) =>
-      fetcher(url).then((res) => {
-        if (res.status === 401) {
+      fetcher(url).then(({ status, json }) => {
+        if (status === 401) {
           return undefined;
+        } else {
+          return json();
         }
-        return res.json();
       }),
     {
       shouldRetryOnError: false,

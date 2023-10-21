@@ -38,7 +38,7 @@ const adminNavs = [
 ];
 
 export function Header() {
-  const { userInfo, userInfoLoading } = useInfo();
+  const { userInfo } = useInfo();
   //const { updateIsForceInit } = useAppStore();
 
 /*
@@ -95,8 +95,7 @@ export function Header() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {!userInfoLoading &&
-            (userInfo ? <span>{userInfo.handle}</span> : <Auth />)}
+          {userInfo ? <span>{userInfo.handle}</span> : <Auth />}
         </Navbar.End>
       </Navbar>
     </div>
@@ -104,7 +103,7 @@ export function Header() {
 }
 
 export function HeaderAdmin() {
-  const { userInfo, userInfoLoading } = useInfo();
+  const { userInfo } = useInfo();
 
   return (
     <div className="flex justify-center">
@@ -155,8 +154,7 @@ export function HeaderAdmin() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {!userInfoLoading &&
-            (userInfo ? <span>{userInfo.handle}</span> : <Auth />)}
+          {userInfo ? <span>{userInfo.handle}</span> : <Auth />}
         </Navbar.End>
       </Navbar>
     </div>
