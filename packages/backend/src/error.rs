@@ -21,11 +21,13 @@ impl<T> HandleSqlxError<T> for Result<T, SqlxError> {
                     AppError::DuplicateError
                 } else {
                     match db_err.code() {
-                        _ => AppError::DatabaseError,
+                        _ => AppError::DatabaseError {
+                            message: db_err.to_string(),
+                        },
                     }
                 }
             }
-            _ => AppError::DatabaseError,
+            _ => AppError::UnknownError,
         })
     }
 }
@@ -43,57 +45,61 @@ impl<T> HandleRedisError<T> for Result<T, RedisError> {
 #[derive(serde::Serialize)]
 struct ErrorResponse {
     success: bool,
+    code: i32,
     message: String,
 }
 
 #[derive(Debug, Display, Error)]
 pub enum AppError {
-    #[display(fmt = "NotFound")]
+    #[display(fmt = "query not found")]
     NotFound,
-    #[display(fmt = "DuplicateError")]
-    DuplicateError,
-    #[display(fmt = "ValidateError")]
-    ValidateError,
-    #[display(fmt = "Password input error")]
-    PasswordError,
-    #[display(fmt = "crypt error")]
-    CryptError,
-    #[display(fmt = "session error")]
-    SessionError,
-    #[display(fmt = "SMSRequestError")]
-    SMSRequestError,
-    #[display(fmt = "Problem not found in database")]
+    #[display(fmt = "problem not found in database")]
     ProblemNotFound,
-    #[display(fmt = "Database Error")]
-    DatabaseError,
-    #[display(fmt = "Redis Error")]
+    #[display(fmt = "already exist")]
+    DuplicateError,
+    #[display(fmt = "data validate wrong")]
+    ValidateError,
+    #[display(fmt = "password input wrong")]
+    PasswordError,
+    #[display(fmt = "server crypt error")]
+    CryptError,
+    #[display(fmt = "server session error")]
+    SessionError,
+    #[display(fmt = "sms request error")]
+    SMSRequestError,
+    #[display(fmt = "database Error: {}", message)]
+    DatabaseError { message: String },
+    #[display(fmt = "redis Error")]
     RedisError,
-    #[display(fmt = "Unknown Error")]
+    #[display(fmt = "unknown Error")]
     UnknownError,
 }
 
-impl ResponseError for AppError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            AppError::NotFound => StatusCode::NOT_FOUND,
-            AppError::DuplicateError => StatusCode::BAD_REQUEST,
-            AppError::ValidateError => StatusCode::BAD_REQUEST,
-            AppError::PasswordError => StatusCode::BAD_REQUEST,
-            AppError::CryptError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::SessionError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::SMSRequestError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::ProblemNotFound => StatusCode::NOT_FOUND,
-            AppError::RedisError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::DatabaseError => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::UnknownError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
+fn status_code(err: &AppError) -> i32 {
+    match *err {
+        AppError::NotFound => 40400,
+        AppError::ProblemNotFound => 40401,
 
+        AppError::DuplicateError => 40601,
+        AppError::ValidateError => 40602,
+        AppError::PasswordError => 40603,
+
+        AppError::UnknownError => 50000,
+        AppError::RedisError => 50002,
+        AppError::DatabaseError { .. } => 50003,
+        AppError::CryptError => 50004,
+        AppError::SessionError => 50005,
+        AppError::SMSRequestError => 50006,
+    }
+}
+
+impl ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code())
+        HttpResponse::build(StatusCode::OK)
             .insert_header(ContentType::json())
             .json(ErrorResponse {
                 success: false,
+                code: status_code(&self),
                 message: self.to_string(),
             })
     }

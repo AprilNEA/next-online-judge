@@ -1,3 +1,5 @@
+use crate::error::HandleSqlxError;
+use crate::schema::ResponseBuilder;
 use crate::{
     dao::{get_problem_by_id, get_user_by_id},
     entity::{
@@ -25,10 +27,11 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
 }
 
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
-    match get_problem_by_id(&data.db_pool, id.into_inner()).await {
-        Ok(problem) => Ok(HttpResponse::Ok().json(problem)),
-        Err(_) => Err(AppError::DatabaseError),
-    }
+    Ok(HttpResponse::Ok().json(
+        get_problem_by_id(&data.db_pool, id.into_inner())
+            .await
+            .handle_sqlx_err()?,
+    ))
 }
 
 pub async fn add(
@@ -60,7 +63,7 @@ pub async fn add(
     )
     .fetch_one(&data.db_pool)
     .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    .handle_sqlx_err()?;
 
     if let Some(testcases) = &body.testcases {
         for testcase in testcases {
@@ -77,11 +80,11 @@ pub async fn add(
             .bind(&user.id)
             .execute(&data.db_pool)
             .await
-            .map_err(|_e| AppError::DatabaseError)?;
+            .handle_sqlx_err()?;
         }
     }
 
-    // tx.commit().await.map_err(|_e| AppError::DatabaseError)?;
+    // tx.commit().await.handle_sqlx_err()?;
 
     Ok(HttpResponse::Ok().json(ProblemCreateResponseSchema {
         new_problem_id: new_problem_id.id,
@@ -118,7 +121,7 @@ pub async fn add_testcase(
         .bind(&user.id)
         .fetch_one(&data.db_pool)
         .await
-        .map_err(|_e| AppError::DatabaseError)?;
+        .handle_sqlx_err()?;
         new_testcases.push(new_testcase);
     }
 
@@ -151,7 +154,7 @@ pub async fn submit(
     .bind(&body.language)
     .fetch_one(&data.db_pool)
     .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    .handle_sqlx_err()?;
 
     let mut conn = data.redis_pool.get().await.expect("Unable to get");
     let _: () = conn
@@ -170,7 +173,7 @@ pub async fn submission_list(
     let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.submission"#)
         .fetch_one(&data.db_pool)
         .await
-        .map_err(|_e| AppError::DatabaseError)?;
+        .handle_sqlx_err()?;
 
     let total_pages = (total + paginator.size - 1) / paginator.size;
 
@@ -196,7 +199,7 @@ pub async fn submission_list(
     )
     .fetch_all(&data.db_pool)
     .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    .handle_sqlx_err()?;
 
     Ok(HttpResponse::Ok().json(PagedResult {
         data: submissions,

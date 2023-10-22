@@ -1,0 +1,9 @@
+name = "next-online-judge-backend"
+authors = ["AprilNEA <github@sku.moe>"]
+
+[workspace]
+
+members = [
+    "packages/backend",
+    "packages/sandbox"
+]

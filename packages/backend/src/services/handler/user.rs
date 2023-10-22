@@ -223,7 +223,7 @@ pub async fn active(
         Err(_) => return Ok(HttpResponse::InternalServerError().json("Error hashing password")),
     };
 
-    match sqlx::query!(
+    sqlx::query!(
         r#"
         UPDATE public.user
         SET handle = $1, password = $2
@@ -235,14 +235,13 @@ pub async fn active(
     )
     .execute(&data.db_pool)
     .await
-    {
-        Ok(_) => Ok(
-            HttpResponse::Ok().json(ResponseBuilder::<ActiveSuccess>::success(ActiveSuccess {
-                handle: body.handle.clone(),
-            })),
-        ),
-        Err(_) => Err(AppError::DatabaseError),
-    }
+    .handle_sqlx_err()?;
+
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<ActiveSuccess>::success(ActiveSuccess {
+            handle: body.handle.clone(),
+        })),
+    )
 }
 
 /// 用户注册：完成 account 的登记

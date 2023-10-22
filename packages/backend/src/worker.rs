@@ -8,7 +8,6 @@ use sqlx::PgPool;
 pub async fn compile_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionManager>) {
     println!("[Worker][Compile] Worker is right");
     let mut conn = redis_pool.get().await.unwrap();
-    ;
     loop {
         let task_data: Option<(String, String)> =
             conn.brpop("compile_task_queue", 0).await.unwrap();
