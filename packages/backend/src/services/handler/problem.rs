@@ -1,5 +1,5 @@
-use crate::error::HandleSqlxError;
-use crate::schema::ResponseBuilder;
+use crate::error::{HandleRedisError, HandleSqlxError};
+
 use crate::{
     dao::{get_problem_by_id, get_user_by_id},
     entity::{
@@ -19,6 +19,8 @@ use actix_web::web::{Data, Json, Path, Query};
 use actix_web::{HttpResponse, Responder};
 use redis::AsyncCommands;
 
+/// 获取所有问题
+/// 带有分页器
 pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
     match ProblemModel::paged(&data.db_pool, &query.into_inner()).await {
         Ok(paged_result) => HttpResponse::Ok().json(paged_result),
@@ -26,6 +28,7 @@ pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Resp
     }
 }
 
+// 获取问题
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
     Ok(HttpResponse::Ok().json(
         get_problem_by_id(&data.db_pool, id.into_inner())
@@ -34,6 +37,7 @@ pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, Ap
     ))
 }
 
+/// 添加新问题
 pub async fn add(
     user: Identity,
     body: Json<ProblemCreateSchema>,
@@ -128,6 +132,7 @@ pub async fn add_testcase(
     Ok(HttpResponse::Ok().json(new_testcases))
 }
 
+/// 用户提交代码，返回提交的任务信息
 pub async fn submit(
     user: Identity,
     body: Json<SubmitCodeSchema>,
@@ -135,10 +140,10 @@ pub async fn submit(
 ) -> Result<HttpResponse, AppError> {
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
-        .unwrap();
+        .handle_sqlx_err()?;
     let problem = get_problem_by_id(&data.db_pool, body.problem_id)
         .await
-        .unwrap();
+        .handle_sqlx_err()?;
 
     let submission = sqlx::query_as::<_, SubmissionModel>(
         r#"
@@ -160,11 +165,13 @@ pub async fn submit(
     let _: () = conn
         .lpush("compile_task_queue", &submission.id)
         .await
-        .expect("Redis Error");
+        .handle_redis_err()?;
 
-    Ok(HttpResponse::Ok().json(&submission.id))
+    Ok(HttpResponse::Ok().json(submission))
 }
 
+/// 获取任务列表
+/// 带有分页器
 pub async fn submission_list(
     query: Query<Paginator>,
     data: Data<AppState>,
