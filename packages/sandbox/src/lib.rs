@@ -72,7 +72,7 @@ impl NsJail {
         {
             let stdin = child.stdin.as_mut().unwrap();
             if let Some(input) = input {
-                stdin.write_all(input.as_bytes()).unwrap();
+                stdin.write_all(input.into().as_bytes()).unwrap();
             }
         }
 

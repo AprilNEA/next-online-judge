@@ -3,14 +3,17 @@ use crate::dao::{
     update_submission_status,
 };
 use crate::entity::SubmissionStatus;
-use crate::error::{HandleRedisError, HandleSqlxError};
+use crate::error::{AppError, HandleRedisError, HandleSqlxError};
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::AsyncCommands;
 use sandbox::NsJail;
 use sqlx::PgPool;
 
-pub async fn compile_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionManager>) {
+pub async fn compile_worker(
+    db_pool: PgPool,
+    redis_pool: Pool<RedisConnectionManager>,
+) -> Result<(), AppError> {
     println!("[Worker][Compile] Worker is right");
     let mut conn = redis_pool.get().await.unwrap();
     let jail = NsJail {
@@ -53,7 +56,10 @@ pub async fn compile_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionMan
     }
 }
 
-pub async fn run_worker(db_pool: PgPool, redis_pool: Pool<RedisConnectionManager>) {
+pub async fn run_worker(
+    db_pool: PgPool,
+    redis_pool: Pool<RedisConnectionManager>,
+) -> Result<(), AppError> {
     println!("[Worker][Run] Worker is right");
     let mut conn = redis_pool.get().await.unwrap();
     let jail = NsJail {
