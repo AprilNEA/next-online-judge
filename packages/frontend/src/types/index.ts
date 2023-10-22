@@ -30,7 +30,6 @@ export type IUserInfo = {
   id: number;
   role: Role;
   status: string;
-  email: string;
   handle: string;
 };
 
@@ -40,8 +39,8 @@ export type IProblem = {
   // passRate: number;
   // difficulty: string;
   description: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ITestcase = {
