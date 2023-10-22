@@ -1,22 +1,25 @@
 "use client";
 
-import type { IProblem } from "@/types";
-import Client from "./client";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import useSWR from "swr/immutable";
+import { Button, Divider } from "react-daisyui";
+
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import AceEditor from "react-ace";
+import "ace-builds/src-min-noconflict/theme-textmate";
+import "ace-builds/src-min-noconflict/mode-c_cpp";
+import "ace-builds/src-min-noconflict/ext-language_tools";
+import "ace-builds/src-min-noconflict/ext-statusbar";
+
 import { fetcher } from "@/utils";
-import useSWRImmutable from "swr/immutable";
-import Loading from "@/app/loading";
+import { IProblem } from "@/types";
 
-async function getProblem(id: number) {
-  const response = await fetcher(`/problem/${id}`);
-  return (await response.json()) as IProblem;
-}
-
-export default function ProblemPage({
-  params,
-}: {
-  params: { problemId: string };
-}) {
-  const { data, isLoading } = useSWRImmutable<IProblem>(
+export default function ({ params }: { params: { problemId: string } }) {
+  const { data: problem, isLoading } = useSWR<IProblem>(
     `/problem/${params.problemId}`,
     (url: string) =>
       fetcher(url).then((res) => {
@@ -35,6 +38,43 @@ export default function ProblemPage({
       keepPreviousData: true,
     },
   );
-  //@ts-ignore
-  return <>{isLoading ? <Loading /> : <Client data={data} />}</>;
+
+  const [userInput, setUserInput] = useState<string>();
+
+  function submitCode() {
+    toast("你的代码已提交");
+  }
+
+  return (
+    <div>
+      <div className="text-3xl mb-10 flex whitespace-nowrap mt-5">
+        Question {problem?.id} {problem?.title}
+      </div>
+      <div className="markdown-body">
+        <Markdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+        >
+          {problem?.description}
+        </Markdown>
+        <Divider></Divider>
+      </div>
+      <div className="flex w-full component-preview my-4 items-center justify-center gap-2 font-sans border-2 rounded-lg overflow-hidden">
+        <AceEditor
+          theme="textmate"
+          mode="c_cpp"
+          editorProps={{ $blockScrolling: true }}
+          placeholder="Code..."
+          width="100%"
+          height="400px"
+          fontSize={18}
+          value={userInput}
+          onChange={(value) => setUserInput(value)}
+        />
+      </div>
+      <div className="flex w-full justify-end">
+        <Button onClick={submitCode}>提交</Button>
+      </div>
+    </div>
+  );
 }

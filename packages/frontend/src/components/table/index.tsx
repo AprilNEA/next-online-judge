@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Table, Pagination, Button, Select } from "react-daisyui";
 
 import { fetcher } from "@/utils";
@@ -17,6 +16,7 @@ export type ITableHeader = {
   key: string;
   name: string;
   className?: string;
+  render?: (data: any) => React.ReactNode;
 };
 
 export function TableWithPager<
@@ -24,7 +24,11 @@ export function TableWithPager<
     id: number;
     [key: string]: any;
   },
->(props: { url: string; headers: ITableHeader[] }) {
+>(props: {
+  url: string;
+  headers: ITableHeader[];
+  rowClick: (key: string | number) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -79,7 +83,7 @@ export function TableWithPager<
           </Table.Head>
           <Table.Body>
             {data.data.map((row) => (
-              <Table.Row key={row.id}>
+              <Table.Row key={row.id} onClick={() => props.rowClick(row.id)}>
                 {props.headers.map((header) => (
                   <span key={`${row.id}-${header.key}`}>{row[header.key]}</span>
                 ))}
