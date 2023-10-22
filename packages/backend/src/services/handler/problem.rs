@@ -3,7 +3,7 @@ use crate::error::{HandleRedisError, HandleSqlxError};
 use crate::{
     dao::{get_problem_by_id, get_user_by_id},
     entity::{
-        problem::{ProblemModel, SubmissionForList, SubmissionModel, TestcaseModel},
+        problem::{ProblemModel, SubmissionModel, SubmissionPublic, TestcaseModel},
         SubmissionStatus,
     },
     entity::{Paged, PagedResult, Paginator},
@@ -170,7 +170,38 @@ pub async fn submit(
     Ok(HttpResponse::Ok().json(submission))
 }
 
-/// 获取任务列表
+/// 获取单个任务状态
+pub async fn submission(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
+    Ok(HttpResponse::Ok().json(
+        sqlx::query_as::<_, SubmissionPublic>(
+            r#"
+        SELECT
+            s.id,
+            s.status,
+            s.user_id,
+            u.handle AS "user_handle",
+            s.problem_id,
+            p.title AS "problem_title",
+            s.language,
+            s.created_at
+        FROM
+            public.submission s
+        INNER JOIN
+            public.user u ON s.user_id = u.id
+        INNER JOIN
+            public.problem p ON s.problem_id = p.id
+        WHERE
+            s.id = $1
+        "#,
+        )
+        .bind(id.into_inner())
+        .fetch_one(&data.db_pool)
+        .await
+        .handle_sqlx_err()?,
+    ))
+}
+
+/// 获取任务状态列表
 /// 带有分页器
 pub async fn submission_list(
     query: Query<Paginator>,
@@ -184,7 +215,7 @@ pub async fn submission_list(
 
     let total_pages = (total + paginator.size - 1) / paginator.size;
 
-    let submissions = sqlx::query_as::<_, SubmissionForList>(
+    let submissions = sqlx::query_as::<_, SubmissionPublic>(
         r#"
         SELECT
             s.id,
