@@ -11,11 +11,11 @@ pub enum JudgeError {
 }
 
 pub struct NsJail {
-    chroot_path: String,
+    pub chroot_path: String,
 }
 
 impl NsJail {
-    fn compile(&self, unique_id: String, input_code: String) -> Result<String, JudgeError> {
+    pub fn compile(&self, unique_id: String, input_code: String) -> Result<String, JudgeError> {
         let output_path = format!("{}/{}", self.chroot_path, unique_id);
 
         let mut child = Command::new("g++")
@@ -41,7 +41,11 @@ impl NsJail {
         Ok(unique_id)
     }
 
-    fn run(&self, unique_id: String, input: Option<&str>) -> Result<String, JudgeError> {
+    pub fn run<S: Into<String>>(
+        &self,
+        unique_id: String,
+        input: Option<S>,
+    ) -> Result<String, JudgeError> {
         let output_path = format!("{}/{}", self.chroot_path, unique_id);
 
         let mut child = Command::new("sudo")
