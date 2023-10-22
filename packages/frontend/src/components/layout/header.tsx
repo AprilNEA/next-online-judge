@@ -19,7 +19,7 @@ const navs = [
   },
   {
     name: "状态",
-    path: "/problem/status",
+    path: "/problem/status/all",
   },
 ];
 

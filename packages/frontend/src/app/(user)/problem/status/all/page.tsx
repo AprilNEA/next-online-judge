@@ -3,7 +3,7 @@ import { ISubmission } from "@/types";
 
 type ISubmissionForList = Omit<ISubmission, "code">;
 
-export default function () {
+export default function SubmissionList() {
   return (
     <TableWithPager<ISubmissionForList>
       url="/problem/status"
