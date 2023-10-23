@@ -9,6 +9,7 @@ export enum Language {
   Cpp = "Cpp",
   Rust = "Rust",
   Python = "Python",
+  Error = "Error",
 }
 
 export enum SubmissionStatus {
@@ -52,14 +53,13 @@ export type ITestcase = {
 
 export type ISubmission = {
   id: number;
-  code: string;
   status: SubmissionStatus;
   language: Language;
-  userId: number;
-  userHandle: string;
+  userId?: number;
+  userHandle?: string;
   problemId: number;
   problemTitle: string;
-  createdAt: string;
+  createdAt?: string;
 };
 
 export type IPager<T> = {

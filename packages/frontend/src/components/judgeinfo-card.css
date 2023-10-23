@@ -1,0 +1,63 @@
+.Pending {
+    background-color: #E0E0E0;
+    color: black;
+}
+
+.Compiling {
+    background-color: #757575;
+    color: white;
+}
+
+.Running {
+    background-color: #212121;
+    color: white;
+}
+
+.Accepted {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.CompileError {
+    background-color: #FFC107;
+    color: white;
+}
+
+.WrongAnswer {
+    background-color: #E53935;
+    color: white;
+}
+
+.TimeLimitExceeded {
+    background-color: #3949AB;
+    color: white;
+}
+
+.RunningError {
+    background-color: #546E7A;
+    color: white;
+}
+
+.MemoryLimitExceeded {
+    background-color: #673AB7;
+    color: white;
+}
+
+.PresentationError {
+    background-color: #00897B;
+    color: white;
+}
+
+.OutputLimitExceeded {
+    background-color: #D81B60;
+    color: white;
+}
+
+.UnknownError {
+    background-color: #6D4C41;
+    color: white;
+}
+
+.svg-white > svg {
+    fill: white;
+}
