@@ -27,10 +27,10 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// 根据特征提取 email, phone 和 handle
+/// 根据特征提取 email, phone 和 handle，均为 column 名
 fn parse_account(s: &str) -> &'static str {
     let email_re = Regex::new(r"(?i)^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$").unwrap();
-    let china_phone_re = Regex::new(r"^1[0-9]\d{10}$").unwrap();
+    let china_phone_re = Regex::new(r"^1\d{10}$").unwrap();
     if email_re.is_match(s) {
         "email"
     } else if china_phone_re.is_match(s) {
@@ -48,8 +48,8 @@ async fn validate_code(
     let mut conn = redis_pool.get().await.unwrap();
 
     let key = format!("validate_code:{}", account);
-    let value: String = conn.get(&key).await.handle_redis_err()?;
-    if value == code {
+    let value: Option<String> = conn.get(&key).await.handle_redis_err()?;
+    if value.is_some() && value.unwrap() == code {
         Ok(())
     } else {
         Err(AppError::ValidateError)
@@ -255,7 +255,7 @@ pub async fn register(
 
     let new_user = sqlx::query_as::<_, UserModel>(&*format!(
         r#"
-        INSERT INTO public.user {} VALUES $1
+        INSERT INTO public.user ({}) VALUES ($1)
         "#,
         parse_account(&body.account)
     ))
