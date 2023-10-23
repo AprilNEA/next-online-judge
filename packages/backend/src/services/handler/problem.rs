@@ -1,5 +1,6 @@
 use crate::error::{HandleRedisError, HandleSqlxError};
 
+use crate::schema::ResponseBuilder;
 use crate::{
     dao::{get_problem_by_id, get_user_by_id},
     entity::{
@@ -129,7 +130,11 @@ pub async fn add_testcase(
         new_testcases.push(new_testcase);
     }
 
-    Ok(HttpResponse::Ok().json(new_testcases))
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<Vec<TestcaseModel>>::success(
+            new_testcases,
+        )),
+    )
 }
 
 /// 用户提交代码，返回提交的任务信息
@@ -167,14 +172,15 @@ pub async fn submit(
         .await
         .handle_redis_err()?;
 
-    Ok(HttpResponse::Ok().json(submission))
+    Ok(HttpResponse::Ok().json(ResponseBuilder::<SubmissionModel>::success(submission)))
 }
 
 /// 获取单个任务状态
 pub async fn submission(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(
-        sqlx::query_as::<_, SubmissionPublic>(
-            r#"
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<SubmissionPublic>::success(
+            sqlx::query_as::<_, SubmissionPublic>(
+                r#"
         SELECT
             s.id,
             s.status,
@@ -193,12 +199,13 @@ pub async fn submission(id: Path<i32>, data: Data<AppState>) -> Result<HttpRespo
         WHERE
             s.id = $1
         "#,
-        )
-        .bind(id.into_inner())
-        .fetch_one(&data.db_pool)
-        .await
-        .handle_sqlx_err()?,
-    ))
+            )
+            .bind(id.into_inner())
+            .fetch_one(&data.db_pool)
+            .await
+            .handle_sqlx_err()?,
+        )),
+    )
 }
 
 /// 获取任务状态列表
@@ -239,13 +246,15 @@ pub async fn submission_list(
     .await
     .handle_sqlx_err()?;
 
-    Ok(HttpResponse::Ok().json(PagedResult {
-        data: submissions,
-        total,
-        size: paginator.size,
-        total_pages,
-        current_page: paginator.page,
-        has_perv_page: paginator.page > 1,
-        has_next_page: paginator.page < total_pages,
-    }))
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::success(PagedResult {
+            data: submissions,
+            total,
+            size: paginator.size,
+            total_pages,
+            current_page: paginator.page,
+            has_perv_page: paginator.page > 1,
+            has_next_page: paginator.page < total_pages,
+        })),
+    )
 }

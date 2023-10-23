@@ -1,7 +1,4 @@
-use crate::dao::{
-    get_problem_by_id, get_submission_by_id, get_testcases_by_submission_id,
-    update_submission_status,
-};
+use crate::dao::{get_submission_by_id, get_testcases_by_submission_id, update_submission_status};
 use crate::entity::SubmissionStatus;
 use crate::error::{AppError, HandleRedisError, HandleSqlxError};
 use bb8::Pool;
