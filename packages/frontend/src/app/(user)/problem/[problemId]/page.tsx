@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { redirect } from 'next/navigation'
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import useSWR from "swr/immutable";
 import { Button, Divider } from "react-daisyui";
@@ -24,25 +24,21 @@ export default function ProblemPage({
 }: {
   params: { problemId: string };
 }) {
+  const router = useRouter();
   const { data: problem, isLoading } = useSWR<IProblem>(
     `/problem/${params.problemId}`,
     (url: string) =>
-      fetcher(url).then((res) => {
-        if (!res.ok) {
-          return {
-            id: Number(params.problemId),
-            title: "在加载问题时发生了错误",
-            description:
-              res.status +
-              " " +
-              res.statusText +
-              "\n\n" +
-              JSON.stringify(res.body),
-          } as IProblem;
-        } else {
-          return res.json();
-        }
-      }),
+      fetcher(url)
+        .then((res) => res.json())
+        .then((res) => {
+          if (!res.success) {
+            let error = new Error(res.message);
+            error.name = `NOJ ERROR ${res.code}`;
+            throw error;
+          } else {
+            return res.data;
+          }
+        }),
     {
       shouldRetryOnError: false,
       keepPreviousData: true,
@@ -59,15 +55,18 @@ export default function ProblemPage({
         source_code: userInput,
         language: "Cpp",
       }),
-    }).then((res) => {
-      if (res.ok) {
-        toast.success("提交成功");
-        //@ts-ignore
-        redirect(`/problem/status/${res.json().id}`);
-      } else {
-        toast.error("提交失败");
-      }
-    });
+    })
+      .then((res) => {
+        if (res.ok) {
+          toast.success("提交成功");
+          return res.json();
+        } else {
+          toast.error("提交失败");
+        }
+      })
+      .then((data) => {
+        router.push(`/problem/status/${data.id}`);
+      });
   }
 
   return (

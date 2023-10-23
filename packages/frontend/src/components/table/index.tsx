@@ -27,25 +27,25 @@ export function TableWithPager<
 >(props: {
   url: string;
   headers: ITableHeader[];
-  rowClick: (key: string | number) => void;
+  rowClick?: (key: string | number) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [size, setSize] = useState(
-    parseInt(searchParams.get("size") ?? "20", 10),
+    parseInt(searchParams.get("size") ?? "20", 10)
   );
   const [page, setPage] = useState(
-    parseInt(searchParams.get("page") ?? "1", 10),
+    parseInt(searchParams.get("page") ?? "1", 10)
   );
 
   const { data, isLoading } = useSWR(
     `${props.url}?size=${size}&page=${page}`,
     (url: string) =>
-      fetcher(url).then((res) => {
-        return res.json();
-      }) as Promise<IPager<T>>,
+      fetcher(url).then(res => res.json()).then((res) => {
+        return res.data;
+      }) as Promise<IPager<T>>
   );
 
   function updatePage({
@@ -83,7 +83,17 @@ export function TableWithPager<
           </Table.Head>
           <Table.Body>
             {data.data.map((row) => (
-              <Table.Row key={row.id} onClick={() => props.rowClick(row.id)}>
+              <Table.Row
+                key={row.id}
+                onClick={
+                  typeof props.rowClick != "undefined"
+                    ? function () {
+                      //@ts-ignore
+                        props.rowClick(row.id);
+                      }
+                    : undefined
+                }
+              >
                 {props.headers.map((header) => (
                   <span key={`${row.id}-${header.key}`}>{row[header.key]}</span>
                 ))}

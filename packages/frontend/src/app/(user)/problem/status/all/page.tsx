@@ -6,7 +6,7 @@ type ISubmissionForList = Omit<ISubmission, "code">;
 export default function SubmissionList() {
   return (
     <TableWithPager<ISubmissionForList>
-      url="/problem/status"
+      url="/problem/status/all"
       headers={[
         {
           key: "id",

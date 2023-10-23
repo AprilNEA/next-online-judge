@@ -8,8 +8,8 @@ export default function Error({
   error,
   reset,
 }: {
-  error: string;
-  reset: () => void;
+  error: Error & { digest?: string };
+  reset?: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -19,13 +19,21 @@ export default function Error({
     <div className="flex justify-center">
       <Card className="mt-20 shadow-md hover:shadow-lg transition-shadow rounded-xl">
         <Card.Body className="flex max-w-[1300px] flex-col">
-          <div className="font-bold text-4xl">An error occurred while processing your request</div>
+          <div className="font-bold text-3xl">
+            An error occurred while processing your request
+          </div>
           <div className="text-lg">
             Contact the administrators with the following information:
           </div>
-          <div className="w-full bg-gray-100 rounded-md tetx-sm p-5 mb-2.5">{error}</div>
+          <div className="w-full bg-gray-100 rounded-md p-5 mb-5">
+            <div className="text-lg ">{error.name}</div>
+            <div className="text-sm mb-2.5 ">{error.message}</div>
+            <p className="text-sm font-light">{error.digest}</p>
+            <p className="text-sm font-light">{error.stack}</p>
+          </div>
+
           <Card.Actions className="justify-end">
-            {reset ? <Button onClick={() => reset()}>RETRY</Button> : ''}
+            {reset ? <Button onClick={() => reset()}>RETRY</Button> : ""}
             <Link href="/">
               <Button className="bg-black text-white hover:bg-gray-500">
                 RETURN TO NOJ

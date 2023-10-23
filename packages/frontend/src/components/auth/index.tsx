@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import { fetcher } from "@/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
+import { useRouter } from "next/navigation";
 
 function LoginForm() {
   const { account, updateAccount, password, updatePassword } = useAppStore();
@@ -179,7 +180,8 @@ function CodeForm() {
   return <div>WIP</div>;
 }
 
-function AuthModal({ hide }: { hide: () => void }) {
+export function AuthModal({ hide }: { hide?: () => void }) {
+  const router = useRouter();
   const { mutate } = useSWRConfig();
   const {
     authModal,
@@ -216,7 +218,7 @@ function AuthModal({ hide }: { hide: () => void }) {
         register: <RegisterForm />,
       },
     }),
-    [authModal],
+    [authModal]
   );
 
   async function handleAuth() {
@@ -241,15 +243,14 @@ function AuthModal({ hide }: { hide: () => void }) {
             if (res.success) {
               toast("登录成功", {
                 icon: "🔥",
-                duration: 5000,
               });
               updateErrorText("");
-              mutate("/user/info");
-              hide();
+              if (hide) hide();
             } else {
               updateErrorText("用户名或密码不正确");
             }
           });
+        await mutate("/user/info");
         break;
       case "register":
         //@ts-ignore
@@ -275,7 +276,7 @@ function AuthModal({ hide }: { hide: () => void }) {
             if (res.success) {
               updateIsForceInit(true);
             } else {
-              updateErrorText("发生了未知错误");
+              updateErrorText("发生了未知错误：" + res.code + ' ' + res.message);
             }
           });
         break;
@@ -285,7 +286,7 @@ function AuthModal({ hide }: { hide: () => void }) {
   if (!isForceInit)
     return (
       <>
-        <Modal.Header className="items-center flex justify-center mb-3 pl-3">
+        <Modal.Header className="items-center flex justify-center mb-3 pl-[8px]">
           <div>
             <div className="font-bold text-2xl">{render.title[authModal]}</div>
             <div className="text-sm text-red-600">{errorText}</div>
@@ -312,9 +313,20 @@ function AuthModal({ hide }: { hide: () => void }) {
             {render.left[authModal]}
           </Button>
           <div className="flex">
-            <form method="dialog">
-              <Button className="btn-ghost mr-1">取消</Button>
-            </form>
+            <Button
+              className="btn-ghost mr-1"
+              onClick={
+                hide
+                  ? function () {
+                      hide();
+                    }
+                  : function () {
+                      router.push("/");
+                    }
+              }
+            >
+              取消
+            </Button>
 
             {!isLoading ? (
               <Button
@@ -332,7 +344,20 @@ function AuthModal({ hide }: { hide: () => void }) {
         </Modal.Actions>
       </>
     );
-  else return <AccountInitModal hide={hide} />;
+  else
+    return (
+      <AccountInitModal
+        hide={
+          hide
+            ? function () {
+                hide();
+              }
+            : function () {
+                router.push("/");
+              }
+        }
+      />
+    );
 }
 
 export function AccountInitModal({ hide }: { hide: () => void }) {
@@ -374,18 +399,17 @@ export function AccountInitModal({ hide }: { hide: () => void }) {
         if (res.success) {
           toast("注册成功", {
             icon: "🔥",
-            duration: 5000,
           });
           updateIsForceInit(false);
-          mutate("/user/info");
           hide();
         }
       });
+    await mutate("/user/info");
   }
 
   return (
     <>
-      <Modal.Header className="items-center flex justify-start mb-3 pl-3">
+      <Modal.Header className="items-center flex justify-start mb-3">
         <div>
           <div className="font-bold text-2xl">完成账号注册</div>
           <div className="text-sm text-red-600">{errorText}</div>
@@ -453,7 +477,7 @@ export function AccountInitModal({ hide }: { hide: () => void }) {
         )}
       </Modal.Actions>
     </>
-  );
+  )
 }
 
 export function Auth() {

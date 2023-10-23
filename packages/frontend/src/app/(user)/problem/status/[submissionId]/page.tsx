@@ -9,7 +9,6 @@ import TimeIcon from "@/icons/time.svg";
 import JudgeinfoCard from "@/components/judgeinfo-card";
 import LanguageIcon from "@/icons/language.svg";
 import { useState } from "react";
-import Error from "../../error";
 
 export default function ProblemPage({
   params,
@@ -17,39 +16,36 @@ export default function ProblemPage({
   params: { submissionId: string };
 }) {
   const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
+
   const { data: submission, isLoading } = useSWR<ISubmission>(
     `/problem/status/${params.submissionId}`,
     (url: string) =>
-      fetcher(url).then((res) => {
-        if (!res.ok) {
-          setIsError(true);
-          return {
-            error: true,
-            errorInfo: res.status + " " + res.statusText,
-          };
-        } else {
-          const result = res.json();
-          setIsFinished(
-            //@ts-ignore
-            result.status != "Pending" &&
-              //@ts-ignore
-              result.status != "Running" &&
-              //@ts-ignore
-              result.status != "Compiling"
-              ? true
-              : false
-          );
-          return result;
-        }
-      }),
+      fetcher(url)
+        .then((res) => res.json())
+        .then((res) => {
+          if (!res.success) {
+            let error = new Error(res.message);
+            error.name = `NOJ ERROR ${res.code}`;
+            throw error;
+          } else {
+            const result = res.data;
+            setIsFinished(
+              result.status != "Pending" &&
+                result.status != "Running" &&
+                result.status != "Compiling"
+                ? true
+                : false
+            );
+            return result;
+          }
+        }),
     {
       shouldRetryOnError: true,
       keepPreviousData: true,
-      refreshInterval: isFinished || isError ? 0 : 1000,
-      revalidateIfStale: isFinished || isError ? false : true,
-      revalidateOnFocus: isFinished || isError ? false : true,
-      revalidateOnReconnect: isFinished || isError ? false : true,
+      refreshInterval: isFinished ? 0 : 1000,
+      revalidateIfStale: isFinished ? false : true,
+      revalidateOnFocus: isFinished ? false : true,
+      revalidateOnReconnect: isFinished ? false : true,
     }
   );
 
@@ -57,8 +53,7 @@ export default function ProblemPage({
     <>
       {isLoading ? (
         <LoadingS />
-        //@ts-ignore
-      ) : !submission?.error ? (
+      ) : (
         <>
           <div className="text-3xl flex whitespace-nowrap mt-5">
             Submission #{submission?.id}
@@ -88,9 +83,6 @@ export default function ProblemPage({
             <JudgeinfoCard id="1" status={submission?.status} />
           </div>
         </>
-      ) : (
-        //@ts-ignore
-        <Error error={submission.errorInfo} />
       )}
     </>
   );

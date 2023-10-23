@@ -10,7 +10,12 @@ export default function useInfo() {
         .then((res) => res.json())
         .then((res) => {
           if (!res.success) {
-            return undefined;
+            return {
+              id: undefined,
+              role: undefined,
+              status: "unauthorized",
+              handle: undefined,
+            };
           } else {
             return res.data;
           }
@@ -19,7 +24,7 @@ export default function useInfo() {
       shouldRetryOnError: false,
       keepPreviousData: true,
       revalidateOnFocus: false,
-    },
+    }
   );
 
   return {

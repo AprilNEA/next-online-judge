@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { Auth, AccountInitModal } from "@/components/auth";
-import { Button, Dropdown, Menu, Navbar, Modal } from "react-daisyui";
+import { Button, Dropdown, Menu, Navbar, Modal, Loading } from "react-daisyui";
 import useInfo from "@/hooks/use-info";
 import { fetcher } from "@/utils";
 import { useSWRConfig } from "swr";
 import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 const navs = [
   {
@@ -39,24 +40,29 @@ const adminNavs = [
 ];
 
 export function Header() {
-  const { userInfo } = useInfo();
+  const { userInfo, userInfoLoading } = useInfo();
   const { mutate } = useSWRConfig();
   const { Dialog, handleShow, handleHide } = Modal.useDialog();
 
-  function handleLogout() {
-    fetcher("/user/logout", {
+  useEffect(() => {
+    if (userInfo && userInfo.status == "inactive") {
+      handleShow();
+    }
+  },[userInfo,handleShow])
+
+  async function handleLogout() {
+    await fetcher("/user/logout", {
       method: "GET",
     })
       .then((res) => res.json())
       .then((res) => {
         if (res.success) {
-          mutate("/user/info");
           toast("登出成功", {
             icon: "🔥",
-            duration: 5000,
           });
         }
       });
+    await mutate("/user/info");
   }
 
   return (
@@ -105,7 +111,7 @@ export function Header() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {userInfo ? (
+          {userInfoLoading ? <Loading size="md" /> : userInfo && userInfo.status != "unauthorized" ? (
             <>
               <span>{userInfo.handle}</span>
               <Button className="ml-3" onClick={handleLogout}>
@@ -116,7 +122,7 @@ export function Header() {
             <Auth />
           )}
           {userInfo && userInfo.status == "inactive" ? (
-            <Dialog onLoad={handleShow}>
+            <Dialog>
               <AccountInitModal hide={handleHide} />
             </Dialog>
           ) : null}
@@ -178,7 +184,11 @@ export function HeaderAdmin() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {userInfo ? <span>{userInfo.handle}</span> : <Auth />}
+          {userInfo && userInfo.status != "unauthorized" ? (
+            <span>{userInfo.handle}</span>
+          ) : (
+            <Auth />
+          )}
         </Navbar.End>
       </Navbar>
     </div>
