@@ -23,19 +23,20 @@ use redis::AsyncCommands;
 /// 获取所有问题
 /// 带有分页器
 pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
-    match ProblemModel::paged(&data.db_pool, &query.into_inner()).await {
-        Ok(paged_result) => HttpResponse::Ok().json(paged_result),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
-    }
+    Ok(HttpResponse::Ok().json(ResponseBuilder::success(
+        ProblemModel::paged(&data.db_pool, &query.into_inner())
+            .await
+            .handle_sqlx_err()?,
+    )))
 }
 
 // 获取问题
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(
+    Ok(HttpResponse::Ok().json(ResponseBuilder::success(
         get_problem_by_id(&data.db_pool, id.into_inner())
             .await
             .handle_sqlx_err()?,
-    ))
+    )))
 }
 
 /// 添加新问题
@@ -91,9 +92,11 @@ pub async fn add(
 
     // tx.commit().await.handle_sqlx_err()?;
 
-    Ok(HttpResponse::Ok().json(ProblemCreateResponseSchema {
-        new_problem_id: new_problem_id.id,
-    }))
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::success(ProblemCreateResponseSchema {
+            new_problem_id: new_problem_id.id,
+        })),
+    )
 }
 
 pub async fn add_testcase(
