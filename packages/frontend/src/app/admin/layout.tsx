@@ -9,7 +9,7 @@ export default function AdminLayout({
   return (
     <AdminGuard>
       <HeaderAdmin />
-      <div className="max-w-[1200px] mx-auto px-[24px]">{children}</div>
+      <div className="max-w-[1300px] mx-auto px-[24px]">{children}</div>
     </AdminGuard>
   );
 }

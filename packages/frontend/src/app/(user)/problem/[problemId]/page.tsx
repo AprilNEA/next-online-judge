@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { redirect } from 'next/navigation'
 import toast from "react-hot-toast";
 import useSWR from "swr/immutable";
 import { Button, Divider } from "react-daisyui";
@@ -51,7 +52,22 @@ export default function ProblemPage({
   const [userInput, setUserInput] = useState<string>();
 
   function submitCode() {
-    toast("你的代码已提交");
+    fetcher(`/problem/submit`, {
+      method: "POST",
+      body: JSON.stringify({
+        problem_id: problem?.id,
+        source_code: userInput,
+        language: "Cpp",
+      }),
+    }).then((res) => {
+      if (res.ok) {
+        toast.success("提交成功");
+        //@ts-ignore
+        redirect(`/problem/status/${res.json().id}`);
+      } else {
+        toast.error("提交失败");
+      }
+    });
   }
 
   return (

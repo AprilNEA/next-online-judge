@@ -8,7 +8,7 @@ export default function UserLayout({
   return (
     <>
       <Header />
-      <div className="max-w-[1200px] mx-auto px-[24px]">{children}</div>
+      <div className="max-w-[1300px] mx-auto px-[24px]">{children}</div>
     </>
   );
 }

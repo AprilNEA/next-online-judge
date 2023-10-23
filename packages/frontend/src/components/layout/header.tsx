@@ -61,7 +61,7 @@ export function Header() {
 
   return (
     <div className="flex justify-center">
-      <Navbar className="max-w-[1200px] pr-[24px]">
+      <Navbar className="max-w-[1300px] pr-[24px]">
         <Navbar.Start>
           <Dropdown>
             <Button
@@ -131,7 +131,7 @@ export function HeaderAdmin() {
 
   return (
     <div className="flex justify-center">
-      <Navbar className="max-w-[1200px] pr-[24px]">
+      <Navbar className="max-w-[1300px] pr-[24px]">
         <Navbar.Start>
           <Dropdown>
             <Button
