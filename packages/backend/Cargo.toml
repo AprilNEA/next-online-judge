@@ -14,6 +14,7 @@ dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.28"
 async-trait = "0.1.73"
+lazy_static = "1.4.0"
 # safety
 bcrypt = "0.15.0"
 # web framework
@@ -39,6 +40,7 @@ sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgr
 bb8 = "0.8.1"
 bb8-redis = "0.13.1"
 sandbox = { path = "../sandbox" }
+
 
 [dependencies.uuid]
 version = "1.4.1"
