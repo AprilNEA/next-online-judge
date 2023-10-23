@@ -17,17 +17,22 @@ use crate::{
 };
 use actix_identity::Identity;
 use actix_web::web::{Data, Json, Path, Query};
-use actix_web::{HttpResponse, Responder};
+use actix_web::HttpResponse;
 use redis::AsyncCommands;
 
 /// 获取所有问题
 /// 带有分页器
-pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
-    Ok(HttpResponse::Ok().json(ResponseBuilder::success(
-        ProblemModel::paged(&data.db_pool, &query.into_inner())
-            .await
-            .handle_sqlx_err()?,
-    )))
+pub async fn get_all(
+    query: Query<Paginator>,
+    data: Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<PagedResult<ProblemModel>>::success(
+            ProblemModel::paged(&data.db_pool, &query.into_inner())
+                .await
+                .handle_sqlx_err()?,
+        )),
+    )
 }
 
 // 获取问题
