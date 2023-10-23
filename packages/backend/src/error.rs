@@ -17,12 +17,12 @@ impl<T> HandleSqlxError<T> for Result<T, SqlxError> {
         self.map_err(|e| match e {
             SqlxError::RowNotFound => AppError::NotFound,
             SqlxError::Database(db_err) => {
-                if db_err.is_foreign_key_violation() {
+                if db_err.is_foreign_key_violation() || db_err.is_unique_violation() {
                     AppError::DuplicateError
                 } else {
                     match db_err.code() {
                         _ => AppError::DatabaseError {
-                            message: db_err.to_string(),
+                            message: Some(db_err.to_string()),
                         },
                     }
                 }
@@ -38,7 +38,9 @@ pub trait HandleRedisError<T> {
 
 impl<T> HandleRedisError<T> for Result<T, RedisError> {
     fn handle_redis_err(self) -> Result<T, AppError> {
-        self.map_err(|_e| AppError::RedisError)
+        self.map_err(|err| AppError::RedisError {
+            message: Some(err.to_string()),
+        })
     }
 }
 
@@ -67,11 +69,11 @@ pub enum AppError {
     SessionError,
     #[display(fmt = "sms request error")]
     SMSRequestError,
-    #[display(fmt = "database Error: {}", message)]
-    DatabaseError { message: String },
-    #[display(fmt = "redis Error")]
-    RedisError,
-    #[display(fmt = "unknown Error")]
+    #[display(fmt = "Database Error: {:?}", message)]
+    DatabaseError { message: Option<String> },
+    #[display(fmt = "Redis Error: {:?}", message)]
+    RedisError { message: Option<String> },
+    #[display(fmt = "Unknown Error")]
     UnknownError,
 }
 
@@ -85,7 +87,7 @@ fn status_code(err: &AppError) -> i32 {
         AppError::PasswordError => 40603,
 
         AppError::UnknownError => 50000,
-        AppError::RedisError => 50002,
+        AppError::RedisError { .. } => 50002,
         AppError::DatabaseError { .. } => 50003,
         AppError::CryptError => 50004,
         AppError::SessionError => 50005,
