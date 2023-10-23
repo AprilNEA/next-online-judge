@@ -24,16 +24,31 @@ use actix_web_grants::GrantsMiddleware;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use dotenv::dotenv;
+use lazy_static::lazy_static;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tokio::spawn;
+
+fn get_env_bool(key: &str, default: bool) -> bool {
+    match std::env::var(key) {
+        Ok(val) => match val.to_lowercase().as_str() {
+            "true" | "1" => true,
+            "false" | "0" => false,
+            _ => default,
+        },
+        Err(_) => default,
+    }
+}
+lazy_static! {
+    static ref DEBUG: bool = get_env_bool("DEBUG", false);
+    static ref DATABASE_URL: String =
+        std::env::var("DATABASE_URL").expect("[Config] DATABASE_URL must be set.");
+    static ref REDIS_URL: String =
+        std::env::var("REDIS_URL").expect("[Config] REDIS_URL must be set.");
+}
 
 pub struct AppState {
     db_pool: PgPool,
     redis_pool: Pool<RedisConnectionManager>,
-}
-
-fn redis_url() -> String {
-    std::env::var("REDIS_URL").expect("[Config] REDIS_URL must be set.")
 }
 
 async fn extract(req: &ServiceRequest) -> Result<Vec<Role>, Error> {
@@ -53,16 +68,13 @@ async fn extract(req: &ServiceRequest) -> Result<Vec<Role>, Error> {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    let database_url =
-        String::from(std::env::var("DATABASE_URL").expect("[Config] DATABASE_URL must be set."));
-
     let secret_key = Key::from(
         std::env::var("SECRET_KEY")
             .expect("[Config] SECRET_KEY must be set.")
             .as_bytes(),
     );
 
-    let redis_store = match RedisSessionStore::new(redis_url()).await {
+    let redis_store = match RedisSessionStore::new(REDIS_URL.clone()).await {
         Ok(store) => {
             println!("[Session Store] Succeed to connect redis.");
             store
@@ -74,7 +86,8 @@ async fn main() -> std::io::Result<()> {
     };
     let redis_pool = match Pool::builder()
         .build(
-            RedisConnectionManager::new(redis_url()).expect("[Redis] Failed to build connection."),
+            RedisConnectionManager::new(REDIS_URL.clone())
+                .expect("[Redis] Failed to build connection."),
         )
         .await
     {
@@ -91,7 +104,7 @@ async fn main() -> std::io::Result<()> {
     // Create a connection pool
     let db_pool = match PgPoolOptions::new()
         .max_connections(10)
-        .connect(&database_url)
+        .connect(&DATABASE_URL.clone())
         .await
     {
         Ok(pool) => {
