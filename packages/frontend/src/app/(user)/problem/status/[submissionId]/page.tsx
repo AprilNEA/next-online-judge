@@ -9,6 +9,7 @@ import TimeIcon from "@/icons/time.svg";
 import JudgeinfoCard from "@/components/judgeinfo-card";
 import LanguageIcon from "@/icons/language.svg";
 import { useState } from "react";
+import Guard from "@/app/guard";
 
 export default function ProblemPage({
   params,
@@ -34,7 +35,7 @@ export default function ProblemPage({
                 result.status != "Running" &&
                 result.status != "Compiling"
                 ? true
-                : false
+                : false,
             );
             return result;
           }
@@ -46,11 +47,11 @@ export default function ProblemPage({
       revalidateIfStale: isFinished ? false : true,
       revalidateOnFocus: isFinished ? false : true,
       revalidateOnReconnect: isFinished ? false : true,
-    }
+    },
   );
 
   return (
-    <>
+    <Guard>
       {isLoading ? (
         <LoadingS />
       ) : (
@@ -84,6 +85,6 @@ export default function ProblemPage({
           </div>
         </>
       )}
-    </>
+    </Guard>
   );
 }

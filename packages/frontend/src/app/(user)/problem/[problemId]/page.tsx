@@ -18,6 +18,7 @@ import "ace-builds/src-min-noconflict/ext-statusbar";
 
 import { fetcher } from "@/utils";
 import { IProblem } from "@/types";
+import Guard from "@/app/guard";
 
 export default function ProblemPage({
   params,
@@ -42,7 +43,7 @@ export default function ProblemPage({
     {
       shouldRetryOnError: false,
       keepPreviousData: true,
-    }
+    },
   );
 
   const [userInput, setUserInput] = useState<string>();
@@ -70,7 +71,7 @@ export default function ProblemPage({
   }
 
   return (
-    <>
+    <Guard>
       {isLoading ? (
         <Loading />
       ) : (
@@ -105,6 +106,6 @@ export default function ProblemPage({
           </div>
         </>
       )}
-    </>
+    </Guard>
   );
 }

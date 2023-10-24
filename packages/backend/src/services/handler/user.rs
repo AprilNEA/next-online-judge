@@ -40,6 +40,7 @@ fn parse_account(s: &str) -> &'static str {
     }
 }
 
+/// 校验验证码
 async fn validate_code(
     redis_pool: &Pool<RedisConnectionManager>,
     account: String,
