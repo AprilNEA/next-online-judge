@@ -1,0 +1,12 @@
+import {useStars} from "../hooks/use-stars";
+export const Stars = () => {
+    const stars = useStars()
+    return <strong>{stars}</strong>
+}
+
+<div className="mt-16 mb-20 text-center">
+    [Getting Started](/getting-started) · [GitHub Repository](https://github.com/AprilNEA/next-online-judge) · [MIT
+    License](https://github.com/AprilNEA/next-online-judge/blob/master/LICENSE)
+</div>
+
+Next Online Judge has <Stars/> stars on GitHub!
