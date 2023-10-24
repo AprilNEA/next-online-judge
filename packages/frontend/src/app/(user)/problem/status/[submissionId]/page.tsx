@@ -10,6 +10,7 @@ import JudgeinfoCard from "@/components/judgeinfo-card";
 import LanguageIcon from "@/icons/language.svg";
 import { useState } from "react";
 import Guard from "@/app/guard";
+import useThrowAsyncError from "@/hooks/async-error-handler";
 
 export default function ProblemPage({
   params,
@@ -17,7 +18,7 @@ export default function ProblemPage({
   params: { submissionId: string };
 }) {
   const [isFinished, setIsFinished] = useState<boolean>(false);
-
+  const throwAsyncError = useThrowAsyncError();
   const { data: submission, isLoading } = useSWR<ISubmission>(
     `/problem/status/${params.submissionId}`,
     (url: string) =>
@@ -26,8 +27,8 @@ export default function ProblemPage({
         .then((res) => {
           if (!res.success) {
             let error = new Error(res.message);
-            error.name = `NOJ ERROR ${res.code}`;
-            throw error;
+            error.name = `NOJ_ERROR ${res.code}`;
+            throwAsyncError(error);
           } else {
             const result = res.data;
             setIsFinished(

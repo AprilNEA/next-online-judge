@@ -19,6 +19,7 @@ import "ace-builds/src-min-noconflict/ext-statusbar";
 import { fetcher } from "@/utils";
 import { IProblem } from "@/types";
 import Guard from "@/app/guard";
+import useThrowAsyncError from "@/hooks/async-error-handler";
 
 export default function ProblemPage({
   params,
@@ -26,6 +27,7 @@ export default function ProblemPage({
   params: { problemId: string };
 }) {
   const router = useRouter();
+  const throwAsyncError = useThrowAsyncError();
   const { data: problem, isLoading } = useSWR<IProblem>(
     `/problem/${params.problemId}`,
     (url: string) =>
@@ -34,8 +36,8 @@ export default function ProblemPage({
         .then((res) => {
           if (!res.success) {
             let error = new Error(res.message);
-            error.name = `NOJ ERROR ${res.code}`;
-            throw error;
+            error.name = `NOJ_ERROR ${res.code}`;
+            throwAsyncError(error);
           } else {
             return res.data;
           }

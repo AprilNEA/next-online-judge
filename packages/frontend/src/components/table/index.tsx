@@ -84,6 +84,7 @@ export function TableWithPager<
           <Table.Body>
             {data.data.map((row) => (
               <Table.Row
+              className="hover:bg-gray-100 cursor-pointer transition-colors"
                 key={row.id}
                 onClick={
                   typeof props.rowClick != "undefined"

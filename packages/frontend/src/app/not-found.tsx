@@ -1,26 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Card, Button } from "react-daisyui";
+import { Button } from "react-daisyui";
+import ReturnIcon from "@/icons/return.svg";
 
 export default function NotFound() {
   return (
-    <div className="flex justify-center">
-      <Card className="mt-20 shadow-md hover:shadow-lg transition-shadow rounded-xl">
-        <Card.Body className="flex max-w-[1300px] flex-col">
-          <div className="font-bold text-4xl">ERROR 404 Not Found</div>
-          <div className="text-lg">
-            NOJ could not find your requested resource.
+    <>
+      <Link href="/" className="absolute p-3 z-50">
+        <Button className="btn-ghost flex col text-lg items-center"><ReturnIcon />RETURN TO NOJ</Button>
+      </Link>
+      <div className="flex flex-col items-center justify-center w-screen h-[70%] absolute">
+        <div className="flex justify-center items-center">
+          <div className="text-[5.5rem] font-extrabold mr-3">NOJ</div>
+          <div>
+            <div className="text-4xl">ERROR</div>
+            <div className="font-extralight text-xl">404 Not Found</div>
           </div>
-          <Card.Actions className="justify-end">
-            <Link href="/">
-              <Button className="bg-black text-white hover:bg-gray-500">
-                RETURN TO NOJ
-              </Button>
-            </Link>
-          </Card.Actions>
-        </Card.Body>
-      </Card>
-    </div>
+        </div>
+        <div className="text-lg font-bold">
+          NOJ could not find your requested resource.
+        </div>
+      </div>
+    </>
   );
 }
