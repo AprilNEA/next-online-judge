@@ -1,3 +1,4 @@
+use crate::entity::problem::TestcaseIO;
 /// Here is the database helper to access data
 use crate::entity::{
     problem::{ProblemModel, SubmissionModel},
@@ -36,6 +37,23 @@ pub async fn get_submission_by_id(db_pool: &PgPool, id: i32) -> Result<Submissio
     )
     .bind(id)
     .fetch_one(db_pool)
+    .await
+}
+
+pub async fn get_testcases_by_submission_id(
+    db_pool: &PgPool,
+    id: i32,
+) -> Result<Vec<TestcaseIO>, Error> {
+    sqlx::query_as::<_, TestcaseIO>(
+        r#"
+        SELECT t.input, t.output 
+        FROM public.testcase t 
+        JOIN public.submission s ON t.problem_id = s.problem_id 
+        WHERE s.id = $1
+        "#,
+    )
+    .bind(id)
+    .fetch_all(db_pool)
     .await
 }
 

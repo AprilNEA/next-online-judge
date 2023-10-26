@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-
 import { Table, Pagination, Button, Select } from "react-daisyui";
 
 import { fetcher } from "@/utils";
@@ -17,29 +16,36 @@ export type ITableHeader = {
   key: string;
   name: string;
   className?: string;
+  render?: (data: any) => React.ReactNode;
 };
 
-export function TableWithPager<T>(props: {
+export function TableWithPager<
+  T extends {
+    id: number;
+    [key: string]: any;
+  },
+>(props: {
   url: string;
   headers: ITableHeader[];
+  rowClick?: (key: string | number) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [size, setSize] = useState(
-    parseInt(searchParams.get("size") ?? "20", 10),
+    parseInt(searchParams.get("size") ?? "20", 10)
   );
   const [page, setPage] = useState(
-    parseInt(searchParams.get("page") ?? "1", 10),
+    parseInt(searchParams.get("page") ?? "1", 10)
   );
 
   const { data, isLoading } = useSWR(
     `${props.url}?size=${size}&page=${page}`,
     (url: string) =>
-      fetcher(url).then((res) => {
-        return res.json();
-      }) as Promise<IPager<T>>,
+      fetcher(url).then(res => res.json()).then((res) => {
+        return res.data;
+      }) as Promise<IPager<T>>
   );
 
   function updatePage({
@@ -77,14 +83,20 @@ export function TableWithPager<T>(props: {
           </Table.Head>
           <Table.Body>
             {data.data.map((row) => (
-              // @ts-ignore
-              <Table.Row key={row.key}>
+              <Table.Row
+              className="hover:bg-gray-100 cursor-pointer transition-colors"
+                key={row.id}
+                onClick={
+                  typeof props.rowClick != "undefined"
+                    ? function () {
+                      //@ts-ignore
+                        props.rowClick(row.id);
+                      }
+                    : undefined
+                }
+              >
                 {props.headers.map((header) => (
-                  // @ts-ignore
-                  <span key={`${row.key}-${header.key}`}>
-                    {/*@ts-ignore*/}
-                    {row[header.key]}
-                  </span>
+                  <span key={`${row.id}-${header.key}`}>{row[header.key]}</span>
                 ))}
               </Table.Row>
             ))}

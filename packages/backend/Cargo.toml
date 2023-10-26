@@ -1,5 +1,5 @@
 [package]
-name = "next-online-judge-backend"
+name = "backend"
 authors = ["AprilNEA <github@sku.moe>"]
 version = "0.1.0"
 edition = "2021"
@@ -14,6 +14,7 @@ dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.28"
 async-trait = "0.1.73"
+lazy_static = "1.4.0"
 # safety
 bcrypt = "0.15.0"
 # web framework
@@ -38,7 +39,7 @@ redis = { version = "0.23.3", features = ["tokio-native-tls-comp"] }
 sqlx = { version = "0.7", features = ["runtime-tokio", "tls-native-tls", "postgres", "json", "chrono", "macros"] }
 bb8 = "0.8.1"
 bb8-redis = "0.13.1"
-
+sandbox = { path = "../sandbox" }
 
 
 [dependencies.uuid]

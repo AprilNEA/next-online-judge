@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Auth from "@/components/auth";
-import { Button, Dropdown, Menu, Navbar } from "react-daisyui";
+import { Auth, AccountInitModal } from "@/components/auth";
+import { Button, Dropdown, Menu, Navbar, Modal, Loading } from "react-daisyui";
 import useInfo from "@/hooks/use-info";
+import { fetcher } from "@/utils";
+import { useSWRConfig } from "swr";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 const navs = [
   {
@@ -16,7 +20,7 @@ const navs = [
   },
   {
     name: "状态",
-    path: "/problem/status",
+    path: "/problem/status/all",
   },
 ];
 
@@ -37,10 +41,33 @@ const adminNavs = [
 
 export function Header() {
   const { userInfo, userInfoLoading } = useInfo();
+  const { mutate } = useSWRConfig();
+  const { Dialog, handleShow, handleHide } = Modal.useDialog();
+
+  useEffect(() => {
+    if (userInfo && userInfo.status == "inactive") {
+      handleShow();
+    }
+  },[userInfo,handleShow])
+
+  async function handleLogout() {
+    await fetcher("/user/logout", {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success) {
+          toast("登出成功", {
+            icon: "🔥",
+          });
+        }
+      });
+    await mutate("/user/info");
+  }
 
   return (
     <div className="flex justify-center">
-      <Navbar className="max-w-[1200px] pr-[24px]">
+      <Navbar className="max-w-[1300px] pr-[24px]">
         <Navbar.Start>
           <Dropdown>
             <Button
@@ -84,8 +111,21 @@ export function Header() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {!userInfoLoading &&
-            (userInfo ? <span>{userInfo.handle}</span> : <Auth />)}
+          {userInfoLoading ? <Loading size="md" /> : userInfo && userInfo.status != "unauthorized" ? (
+            <>
+              <span>{userInfo.handle}</span>
+              <Button className="ml-3" onClick={handleLogout}>
+                登出
+              </Button>
+            </>
+          ) : (
+            <Auth />
+          )}
+          {userInfo && userInfo.status == "inactive" ? (
+            <Dialog>
+              <AccountInitModal hide={handleHide} />
+            </Dialog>
+          ) : null}
         </Navbar.End>
       </Navbar>
     </div>
@@ -93,11 +133,11 @@ export function Header() {
 }
 
 export function HeaderAdmin() {
-  const { userInfo, userInfoLoading } = useInfo();
+  const { userInfo } = useInfo();
 
   return (
     <div className="flex justify-center">
-      <Navbar className="max-w-[1200px] pr-[24px]">
+      <Navbar className="max-w-[1300px] pr-[24px]">
         <Navbar.Start>
           <Dropdown>
             <Button
@@ -144,8 +184,11 @@ export function HeaderAdmin() {
           </Menu>
         </Navbar.Center>
         <Navbar.End>
-          {!userInfoLoading &&
-            (userInfo ? <span>{userInfo.handle}</span> : <Auth />)}
+          {userInfo && userInfo.status != "unauthorized" ? (
+            <span>{userInfo.handle}</span>
+          ) : (
+            <Auth />
+          )}
         </Navbar.End>
       </Navbar>
     </div>

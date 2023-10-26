@@ -1,7 +1,10 @@
+use crate::error::{HandleRedisError, HandleSqlxError};
+
+use crate::schema::ResponseBuilder;
 use crate::{
     dao::{get_problem_by_id, get_user_by_id},
     entity::{
-        problem::{ProblemModel, SubmissionForList, SubmissionModel, TestcaseModel},
+        problem::{ProblemModel, SubmissionModel, SubmissionPublic, TestcaseModel},
         SubmissionStatus,
     },
     entity::{Paged, PagedResult, Paginator},
@@ -14,23 +17,34 @@ use crate::{
 };
 use actix_identity::Identity;
 use actix_web::web::{Data, Json, Path, Query};
-use actix_web::{HttpResponse, Responder};
+use actix_web::HttpResponse;
 use redis::AsyncCommands;
 
-pub async fn get_all(query: Query<Paginator>, data: Data<AppState>) -> impl Responder {
-    match ProblemModel::paged(&data.db_pool, &query.into_inner()).await {
-        Ok(paged_result) => HttpResponse::Ok().json(paged_result),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Database error: {}", e)),
-    }
+/// 获取所有问题
+/// 带有分页器
+pub async fn get_all(
+    query: Query<Paginator>,
+    data: Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<PagedResult<ProblemModel>>::success(
+            ProblemModel::paged(&data.db_pool, &query.into_inner())
+                .await
+                .handle_sqlx_err()?,
+        )),
+    )
 }
 
+// 获取问题
 pub async fn get(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
-    match get_problem_by_id(&data.db_pool, id.into_inner()).await {
-        Ok(problem) => Ok(HttpResponse::Ok().json(problem)),
-        Err(_) => Err(AppError::DatabaseError),
-    }
+    Ok(HttpResponse::Ok().json(ResponseBuilder::success(
+        get_problem_by_id(&data.db_pool, id.into_inner())
+            .await
+            .handle_sqlx_err()?,
+    )))
 }
 
+/// 添加新问题
 pub async fn add(
     user: Identity,
     body: Json<ProblemCreateSchema>,
@@ -60,7 +74,7 @@ pub async fn add(
     )
     .fetch_one(&data.db_pool)
     .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    .handle_sqlx_err()?;
 
     if let Some(testcases) = &body.testcases {
         for testcase in testcases {
@@ -77,15 +91,17 @@ pub async fn add(
             .bind(&user.id)
             .execute(&data.db_pool)
             .await
-            .map_err(|_e| AppError::DatabaseError)?;
+            .handle_sqlx_err()?;
         }
     }
 
-    // tx.commit().await.map_err(|_e| AppError::DatabaseError)?;
+    // tx.commit().await.handle_sqlx_err()?;
 
-    Ok(HttpResponse::Ok().json(ProblemCreateResponseSchema {
-        new_problem_id: new_problem_id.id,
-    }))
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::success(ProblemCreateResponseSchema {
+            new_problem_id: new_problem_id.id,
+        })),
+    )
 }
 
 pub async fn add_testcase(
@@ -118,13 +134,18 @@ pub async fn add_testcase(
         .bind(&user.id)
         .fetch_one(&data.db_pool)
         .await
-        .map_err(|_e| AppError::DatabaseError)?;
+        .handle_sqlx_err()?;
         new_testcases.push(new_testcase);
     }
 
-    Ok(HttpResponse::Ok().json(new_testcases))
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<Vec<TestcaseModel>>::success(
+            new_testcases,
+        )),
+    )
 }
 
+/// 用户提交代码，返回提交的任务信息
 pub async fn submit(
     user: Identity,
     body: Json<SubmitCodeSchema>,
@@ -132,10 +153,10 @@ pub async fn submit(
 ) -> Result<HttpResponse, AppError> {
     let user = get_user_by_id(&data.db_pool, parse_user_id(user))
         .await
-        .unwrap();
+        .handle_sqlx_err()?;
     let problem = get_problem_by_id(&data.db_pool, body.problem_id)
         .await
-        .unwrap();
+        .handle_sqlx_err()?;
 
     let submission = sqlx::query_as::<_, SubmissionModel>(
         r#"
@@ -151,17 +172,52 @@ pub async fn submit(
     .bind(&body.language)
     .fetch_one(&data.db_pool)
     .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    .handle_sqlx_err()?;
 
     let mut conn = data.redis_pool.get().await.expect("Unable to get");
     let _: () = conn
         .lpush("compile_task_queue", &submission.id)
         .await
-        .expect("Redis Error");
+        .handle_redis_err()?;
 
-    Ok(HttpResponse::Ok().json(&submission.id))
+    Ok(HttpResponse::Ok().json(ResponseBuilder::<SubmissionModel>::success(submission)))
 }
 
+/// 获取单个任务状态
+pub async fn submission(id: Path<i32>, data: Data<AppState>) -> Result<HttpResponse, AppError> {
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::<SubmissionPublic>::success(
+            sqlx::query_as::<_, SubmissionPublic>(
+                r#"
+        SELECT
+            s.id,
+            s.status,
+            s.user_id,
+            u.handle AS "user_handle",
+            s.problem_id,
+            p.title AS "problem_title",
+            s.language,
+            s.created_at
+        FROM
+            public.submission s
+        INNER JOIN
+            public.user u ON s.user_id = u.id
+        INNER JOIN
+            public.problem p ON s.problem_id = p.id
+        WHERE
+            s.id = $1
+        "#,
+            )
+            .bind(id.into_inner())
+            .fetch_one(&data.db_pool)
+            .await
+            .handle_sqlx_err()?,
+        )),
+    )
+}
+
+/// 获取任务状态列表
+/// 带有分页器
 pub async fn submission_list(
     query: Query<Paginator>,
     data: Data<AppState>,
@@ -170,11 +226,11 @@ pub async fn submission_list(
     let total: i64 = sqlx::query_scalar::<_, i64>(r#"SELECT COUNT(*) FROM public.submission"#)
         .fetch_one(&data.db_pool)
         .await
-        .map_err(|_e| AppError::DatabaseError)?;
+        .handle_sqlx_err()?;
 
     let total_pages = (total + paginator.size - 1) / paginator.size;
 
-    let submissions = sqlx::query_as::<_, SubmissionForList>(
+    let submissions = sqlx::query_as::<_, SubmissionPublic>(
         r#"
         SELECT
             s.id,
@@ -196,15 +252,17 @@ pub async fn submission_list(
     )
     .fetch_all(&data.db_pool)
     .await
-    .map_err(|_e| AppError::DatabaseError)?;
+    .handle_sqlx_err()?;
 
-    Ok(HttpResponse::Ok().json(PagedResult {
-        data: submissions,
-        total,
-        size: paginator.size,
-        total_pages,
-        current_page: paginator.page,
-        has_perv_page: paginator.page > 1,
-        has_next_page: paginator.page < total_pages,
-    }))
+    Ok(
+        HttpResponse::Ok().json(ResponseBuilder::success(PagedResult {
+            data: submissions,
+            total,
+            size: paginator.size,
+            total_pages,
+            current_page: paginator.page,
+            has_perv_page: paginator.page > 1,
+            has_next_page: paginator.page < total_pages,
+        })),
+    )
 }

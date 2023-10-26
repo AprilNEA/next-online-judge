@@ -6,16 +6,25 @@ export default function useInfo() {
   const { data, isLoading } = useSWR<IUserInfo>(
     "/user/info",
     (url: string) =>
-      fetcher(url).then((res) => {
-        if (res.status === 401) {
-          return undefined;
-        }
-        return res.json();
-      }),
+      fetcher(url)
+        .then((res) => res.json())
+        .then((res) => {
+          if (!res.success) {
+            return {
+              id: undefined,
+              role: undefined,
+              status: "unauthorized",
+              handle: undefined,
+            };
+          } else {
+            return res.data;
+          }
+        }),
     {
       shouldRetryOnError: false,
       keepPreviousData: true,
-    },
+      revalidateOnFocus: false,
+    }
   );
 
   return {

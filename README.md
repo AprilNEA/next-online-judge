@@ -71,8 +71,15 @@ Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
     & cargo run --release
     ```
 
-### Run
-
 ## Contribute
 
 If you want to run the project locally, you can follow the steps above too.
+
+## Contributor
+<a href="https://github.com/AprilNEA/next-online-judge/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=AprilNEA/next-online-judge" />
+</a>
+
+## Stats
+![Stats](https://repobeats.axiom.co/api/embed/9d170f007ee1155561a6bfbd99eb11c5e9844eb2.svg "Repobeats analytics image")
+

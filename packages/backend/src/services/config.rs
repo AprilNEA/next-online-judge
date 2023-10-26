@@ -10,8 +10,9 @@ pub fn config(cfg: &mut ServiceConfig) {
                 scope("/user")
                     .service(resource("/info").route(get().to(user::info)))
                     .service(resource("/login").route(post().to(user::login)))
+                    .service(resource("/logout").route(get().to(user::logout)))
                     .service(resource("/register").route(post().to(user::register)))
-                    .service(resource("/code").route(post().to(user::request_code)))
+                    .service(resource("/code").route(post().to(user::code)))
                     .service(resource("/active").route(post().to(user::active)))
                     .service(resource("/forget").route(post().to(user::forget))),
             )
@@ -19,9 +20,10 @@ pub fn config(cfg: &mut ServiceConfig) {
                 scope("/problem")
                     .service(resource("/add").route(post().to(problem::add)))
                     .service(resource("/testcase/add").route(post().to(problem::add_testcase)))
-                    .service(resource("/all").route(get().to(problem::get_all)))
                     .service(resource("/submit").route(post().to(problem::submit)))
-                    .service(resource("/status").route(get().to(problem::submission_list)))
+                    .service(resource("/status/all").route(get().to(problem::submission_list)))
+                    .service(resource("/status/{id}").route(get().to(problem::submission)))
+                    .service(resource("/all").route(get().to(problem::get_all)))
                     .service(resource("/{id}").route(get().to(problem::get))),
             )
             .service(

@@ -28,6 +28,12 @@ pub struct TestcaseModel {
 }
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
+pub struct TestcaseIO {
+    pub input: String,
+    pub output: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct SubmissionModel {
     pub id: i32,
@@ -41,7 +47,7 @@ pub struct SubmissionModel {
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 #[serde(rename_all(serialize = "camelCase"))]
-pub struct SubmissionForList {
+pub struct SubmissionPublic {
     pub id: i32,
     pub status: SubmissionStatus,
     pub user_id: i32,

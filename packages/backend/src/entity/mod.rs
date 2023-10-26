@@ -52,6 +52,7 @@ fn default_size() -> i64 {
     50
 }
 impl Paginator {
+    #![allow(dead_code)]
     pub fn new(page: i64, size: i64) -> Self {
         Self { page, size }
     }
