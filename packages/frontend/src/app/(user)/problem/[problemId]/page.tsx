@@ -59,17 +59,14 @@ export default function ProblemPage({
         language: "Cpp",
       }),
     })
-      .then((res) => {
-        if (res.ok) {
+      .then(res => res.json()).then(res => {
+        if (res.success) {
           toast.success("提交成功");
-          return res.json();
+          router.push(`/problem/status/${res.data.id}`);
         } else {
           toast.error("提交失败");
         }
       })
-      .then((data) => {
-        router.push(`/problem/status/${data.id}`);
-      });
   }
 
   return (
