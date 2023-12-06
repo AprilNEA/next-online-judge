@@ -1,25 +1,28 @@
-// Prisma only use for schema management
-// @updateAt will not automaticaly update beside prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 enum Role {
-  USER
-  ADMIN
+  User
+  Admin
 
   @@map("role")
 }
 
 enum Language {
   C
-  GO
-  CPP
-  RUST
-  PYTHON
-
-  @@map("language")
+  Go
+  Cpp
+  Java
+  Rust
+  Python
+  JavaScript
+  TypeScript
 }
 
 enum SubmissionStatus {
@@ -35,39 +38,33 @@ enum SubmissionStatus {
   PresentationError
   OutputLimitExceeded
   UnknownError
-
-  @@map("submission_status")
 }
 
-// 用户
 model User {
   id          Int          @id @default(autoincrement())
-  role        Role         @default(USER)
+  role        Role         @default(User)
   phone       String?      @unique
   email       String?      @unique
   handle      String?      @unique
   password    String?
-  created_at  DateTime     @default(now())
-  register_ip String?      @db.Inet
+  createdAt   DateTime     @default(now())
+  registerIp  String?      @db.Inet
   // relation
   submissions Submission[]
   problems    Problem[]
   testCases   TestCase[]
-
-  @@map("user")
 }
 
-// 问题
 model Problem {
-  id              Int      @id @default(autoincrement())
-  title           String
-  description     String   @db.Text
-  created_at      DateTime @default(now())
-  updated_at      DateTime @default(now()) @updatedAt
-  created_user_id Int
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  createdUserId Int
 
   // relation
-  created_user User @relation(fields: [created_user_id], references: [id])
+  createdUser User @relation(fields: [createdUserId], references: [id])
 
   testcases   TestCase[]
   submissions Submission[]
@@ -75,37 +72,36 @@ model Problem {
   @@map("problem")
 }
 
-// 测试用例
 model TestCase {
   id Int @id @default(autoincrement())
 
-  problem_id Int
-  is_hidden  Boolean @default(false)
+  problemId Int
+  isHidden  Boolean @default(false)
 
   input  String @db.Text
   output String @db.Text
 
-  created_user_id Int
+  createdUserId Int
 
   // relation
-  problem      Problem @relation(fields: [problem_id], references: [id])
-  created_user User    @relation(fields: [created_user_id], references: [id])
+  problem     Problem @relation(fields: [problemId], references: [id])
+  createdUser User    @relation(fields: [createdUserId], references: [id])
 
   @@map("testcase")
 }
 
 model Submission {
-  id         Int              @id @default(autoincrement())
-  code       String           @db.Text
-  status     SubmissionStatus @default(Pending)
-  user_id    Int
-  problem_id Int
-  language   Language
-  created_at DateTime         @default(now())
+  id        Int              @id @default(autoincrement())
+  code      String           @db.Text
+  status    SubmissionStatus @default(Pending)
+  userId    Int
+  problemId Int
+  language  Language
+  createdAt DateTime         @default(now())
 
   // relation
-  user    User    @relation(fields: [user_id], references: [id])
-  problem Problem @relation(fields: [problem_id], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
 
   @@map("submission")
 }
