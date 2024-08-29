@@ -1,0 +1,35 @@
+{
+  "name": "next-online-judge-frontend",
+  "version": "0.1.0",
+  "author": "AprilNEA <github@sku.moe> (https://sku.moe)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.10",
+    "clsx": "^2.0.0",
+    "next": "13.5.4",
+    "prettier": "^3.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-syntax-highlighter": "^15.5.0",
+    "swr": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18",
+    "@types/react-syntax-highlighter": "^15.5.8",
+    "autoprefixer": "^10.0.2",
+    "daisyui": "^3.9.2",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "13.5.4",
+    "postcss": "^8.2.14",
+    "tailwindcss": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}

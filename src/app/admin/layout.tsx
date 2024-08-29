@@ -1,15 +1,15 @@
-import { HeaderAdmin } from "@/components/layout/header";
-import AdminGuard from "@/app/admin/guard";
+import "@/globals.css";
+import Header from "@/app/header";
 
-export default function AdminLayout({
+export default function UserLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <AdminGuard>
-      <HeaderAdmin />
-      <div className="max-w-[1200px] mx-auto px-[24px]">{children}</div>
-    </AdminGuard>
+    <>
+      <Header />
+      <div className="mx-20 my-10">{children}</div>
+    </>
   );
 }
